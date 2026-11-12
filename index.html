@@ -62,9 +62,9 @@
 
                 <!-- Ações Globais -->
                 <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="openSpacesModal()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
-                        <i data-lucide="warehouse" class="w-4 h-4 text-amber-600"></i>
-                        <span>Quartos & Prateleiras</span>
+                    <button onclick="openSpacesModal()" class="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow-2xs transition">
+                        <i data-lucide="settings-2" class="w-4 h-4 text-amber-600"></i>
+                        <span>Configurar Quartos & Prateleiras</span>
                     </button>
 
                     <button onclick="exportToExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="Exportar planilha compatível com Excel">
@@ -118,8 +118,8 @@
                     <strong>Modo Demonstração:</strong> Carregamos algumas telas de exemplo para você explorar o sistema. Quando quiser começar seu catálogo real, limpe os exemplos.
                 </p>
             </div>
-            <button onclick="openConfirmModal('Limpar Dados de Exemplo', 'Deseja apagar todos os dados de exemplo para começar seu catálogo do zero? Os quartos padrão serão mantidos.', clearDemoData)" class="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition">
-                Limpar Exemplos
+            <button type="button" id="btn-limpar-demo" onclick="handleClearDemoClick()" class="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0 transition-all duration-200 cursor-pointer">
+                Limpar Demonstração
             </button>
         </div>
 
@@ -143,6 +143,7 @@
                     <select id="inactivity-months" onchange="updateInactivitySetting(this.value)" class="bg-white border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-500">
                         <option value="2">2 meses</option>
                         <option value="3">3 meses</option>
+                        <option value="4">4 meses</option>
                         <option value="6" selected>6 meses</option>
                         <option value="9">9 meses</option>
                         <option value="12">12 meses</option>
@@ -188,9 +189,10 @@
                 <div class="lg:col-span-2">
                     <select id="filter-status" onchange="renderScreens()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="ALL">Todos Status</option>
-                        <option value="ACTIVE">Ativas (Em uso)</option>
+                        <option value="ACTIVE">Em Uso (Ativas)</option>
+                        <option value="SHARED">Compartilhadas (2 Artes)</option>
                         <option value="INACTIVE">Candidatas a Desfazer</option>
-                        <option value="AVAILABLE">Disponíveis (Limpas)</option>
+                        <option value="AVAILABLE">Vazias / Disponíveis</option>
                     </select>
                 </div>
             </div>
@@ -367,15 +369,15 @@
 
     <!-- MODAL: Gerenciar Quartos e Prateleiras -->
     <div id="spaces-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-xl border border-slate-200 my-8 overflow-hidden">
+        <div class="bg-white rounded-2xl max-w-3xl w-full shadow-xl border border-slate-200 my-8 overflow-hidden">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
                     <div class="bg-amber-100 text-amber-700 p-2 rounded-lg">
                         <i data-lucide="warehouse" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-slate-900">Quartos e Prateleiras</h3>
-                        <p class="text-xs text-slate-500">Configure os espaços físicos da sua serigrafia</p>
+                        <h3 class="text-lg font-bold text-slate-900">Configurar Quartos & Prateleiras</h3>
+                        <p class="text-xs text-slate-500">Defina a quantidade de quartos, prateleiras e personalize cada nome</p>
                     </div>
                 </div>
                 <button onclick="closeSpacesModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/50 transition">
@@ -384,13 +386,32 @@
             </div>
 
             <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-                <!-- Adicionar Novo Quarto -->
-                <form onsubmit="addRoom(event)" class="flex gap-2">
-                    <input type="text" id="new-room-name" required placeholder="Nome do novo quarto/sala (Ex: Sala Fundo, Depósito 2)" class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
-                    <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-1.5 shrink-0 transition">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Adicionar Quarto
-                    </button>
-                </form>
+                <!-- Configuração Rápida da Estrutura (Quantidade de Quartos ou Novo Quarto) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4">
+                    <!-- Definir Quantidade Total de Quartos -->
+                    <form onsubmit="setTotalRoomsCount(event)" class="space-y-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-amber-900">Quantidade de Quartos na Estamparia</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="total-rooms-input" min="1" max="50" required class="w-24 px-3 py-2 bg-white border border-amber-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <button type="submit" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">
+                                Aplicar Quantidade
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-amber-800/80">Cria quartos automaticamente (ex: Quarto 1, Quarto 2...) ou ajusta o total.</p>
+                    </form>
+
+                    <!-- Adicionar Novo Quarto com Nome Personalizado -->
+                    <form onsubmit="addRoom(event)" class="space-y-2 md:border-l md:border-amber-200 md:pl-4">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-amber-900">Adicionar Quarto Personalizado</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-room-name" required placeholder="Ex: Sala Fundo, Estamparia 2..." class="flex-1 px-3 py-2 bg-white border border-amber-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1 shrink-0 transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Criar
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-amber-800/80">Adiciona um novo espaço com 1 prateleira inicial pronta.</p>
+                    </form>
+                </div>
 
                 <!-- Lista de Quartos e suas Prateleiras -->
                 <div id="rooms-management-list" class="space-y-4">
@@ -398,8 +419,9 @@
                 </div>
             </div>
 
-            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
-                <button onclick="closeSpacesModal()" class="px-5 py-2 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-900 text-white transition">Concluir</button>
+            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                <span class="text-xs text-slate-500">As alterações de nomes são salvas automaticamente nas telas.</span>
+                <button onclick="closeSpacesModal()" class="px-5 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition">Concluir</button>
             </div>
         </div>
     </div>
@@ -428,6 +450,7 @@
         // ESTADO DA APLICAÇÃO & PERSISTÊNCIA
         // ==========================================
         const STORAGE_KEY = 'sericatalog_db_v1';
+        const INIT_FLAG_KEY = 'sericatalog_iniciado';
 
         let appState = {
             inactivityMonths: 6,
@@ -438,10 +461,274 @@
 
         let activeRoomFilter = 'ALL';
         let confirmCallback = null;
+        let isConfirmingDemoClear = false;
+        let demoClearTimeout = null;
 
         // Gera IDs únicos simples
         function generateId(prefix = 'id') {
             return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        }
+
+        // Retorna data YYYY-MM-DD subtraindo N dias de hoje
+        function getDateDaysAgo(days) {
+            const d = new Date();
+            d.setDate(d.getDate() - days);
+            return d.toISOString().split('T')[0];
+        }
+
+        function getTodayISO() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // Carrega dados do localStorage ou inicializa com exemplos APENAS na primeira visita
+        function initApp() {
+            const hasInitialized = localStorage.getItem(INIT_FLAG_KEY);
+            const saved = localStorage.getItem(STORAGE_KEY);
+
+            if (hasInitialized === 'true' && saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appState = {
+                        inactivityMonths: parsed.inactivityMonths || 6,
+                        isDemoData: Boolean(parsed.isDemoData),
+                        rooms: Array.isArray(parsed.rooms) && parsed.rooms.length ? parsed.rooms : getMinimalRooms(),
+                        screens: Array.isArray(parsed.screens) ? parsed.screens : []
+                    };
+                } catch (e) {
+                    console.error("Erro ao ler localStorage:", e);
+                    appState = {
+                        inactivityMonths: 6,
+                        isDemoData: false,
+                        rooms: getMinimalRooms(),
+                        screens: []
+                    };
+                    saveToStorage();
+                }
+            } else if (hasInitialized === 'true' && !saved) {
+                appState = {
+                    inactivityMonths: 6,
+                    isDemoData: false,
+                    rooms: getMinimalRooms(),
+                    screens: []
+                };
+                saveToStorage();
+            } else {
+                loadDemoData();
+                localStorage.setItem(INIT_FLAG_KEY, 'true');
+            }
+
+            document.getElementById('inactivity-months').value = appState.inactivityMonths;
+            updateDemoBanner();
+            refreshUI();
+        }
+
+        function getMinimalRooms() {
+            return [
+                { id: 'room_1', name: 'Quarto Principal', shelves: ['Prateleira 1'] }
+            ];
+        }
+
+        function getDefaultRooms() {
+            return [
+                { id: 'room_1', name: 'Quarto Principal', shelves: ['Prateleira A1', 'Prateleira A2', 'Prateleira B1'] },
+                { id: 'room_2', name: 'Sala Escolas', shelves: ['Estante 1 - Superior', 'Estante 1 - Inferior'] },
+                { id: 'room_3', name: 'Depósito Fundos', shelves: ['Prateleira Reserva'] }
+            ];
+        }
+
+        function loadDemoData() {
+            appState = {
+                inactivityMonths: 6,
+                isDemoData: true,
+                rooms: getDefaultRooms(),
+                screens: [
+                    {
+                        id: 'scr_1',
+                        code: 'T-01',
+                        size: 'Grande',
+                        dimensions: '50x70 cm',
+                        roomId: 'room_1',
+                        shelf: 'Prateleira A1',
+                        isClean: false,
+                        notes: 'Tela 55 fios, madeira em ótimo estado',
+                        arts: [
+                            { category: 'Empresa', client: 'Metalúrgica Forte', desc: 'Logo Costas Completo', lastOrderDate: getDateDaysAgo(18) }
+                        ]
+                    },
+                    {
+                        id: 'scr_2',
+                        code: 'T-02',
+                        size: 'Pequena',
+                        dimensions: '35x45 cm',
+                        roomId: 'room_1',
+                        shelf: 'Prateleira A2',
+                        isClean: false,
+                        notes: 'Tela compartilhada (2 logos peito)',
+                        arts: [
+                            { category: 'Empresa', client: 'Padaria Pão Quente', desc: 'Logo Peito Esquerdo', lastOrderDate: getDateDaysAgo(42) },
+                            { category: 'Empresa', client: 'Auto Elétrica Souza', desc: 'Brasão Bolso', lastOrderDate: getDateDaysAgo(12) }
+                        ]
+                    },
+                    {
+                        id: 'scr_3',
+                        code: 'E-10',
+                        size: 'Grande',
+                        dimensions: '50x70 cm',
+                        roomId: 'room_2',
+                        shelf: 'Estante 1 - Superior',
+                        isClean: false,
+                        notes: 'Uniforme escolar anual',
+                        arts: [
+                            { category: 'Escola', client: 'Colégio Estadual Machado de Assis', desc: 'Brasão Frontal + Mangas', lastOrderDate: getDateDaysAgo(75) }
+                        ]
+                    },
+                    {
+                        id: 'scr_4',
+                        code: 'T-14',
+                        size: 'Grande',
+                        dimensions: '50x70 cm',
+                        roomId: 'room_1',
+                        shelf: 'Prateleira B1',
+                        isClean: false,
+                        notes: 'Cliente fechou filial - avaliar recuperação',
+                        arts: [
+                            { category: 'Empresa', client: 'Transportadora Rápido Sul', desc: 'Estampa Costas 2 Cores', lastOrderDate: getDateDaysAgo(245) }
+                        ]
+                    },
+                    {
+                        id: 'scr_5',
+                        code: 'T-19',
+                        size: 'Pequena',
+                        dimensions: '35x45 cm',
+                        roomId: 'room_3',
+                        shelf: 'Prateleira Reserva',
+                        isClean: false,
+                        notes: 'Ambas as empresas sem pedido há mais de 7 meses',
+                        arts: [
+                            { category: 'Empresa', client: 'Mercadinho Bom Preço', desc: 'Logo Avental', lastOrderDate: getDateDaysAgo(220) },
+                            { category: 'Escola', client: 'Escolinha Primeiros Passos', desc: 'Nome Turma 2025', lastOrderDate: getDateDaysAgo(260) }
+                        ]
+                    },
+                    {
+                        id: 'scr_6',
+                        code: 'T-25',
+                        size: 'Grande',
+                        dimensions: '50x70 cm',
+                        roomId: 'room_3',
+                        shelf: 'Prateleira Reserva',
+                        isClean: true,
+                        notes: 'Emulsão removida e desengraxada, pronta para gravar',
+                        arts: []
+                    }
+                ]
+            };
+            saveToStorage();
+        }
+
+        function saveToStorage() {
+            localStorage.setItem(INIT_FLAG_KEY, 'true');
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        }
+
+        // Confirmação em dois cliques diretamente no botão (imune a bloqueios de iframe/confirm)
+        function handleClearDemoClick() {
+            const btn = document.getElementById('btn-limpar-demo');
+            if (!btn) return;
+
+            if (!isConfirmingDemoClear) {
+                isConfirmingDemoClear = true;
+                btn.textContent = 'Clique novamente para confirmar';
+                btn.classList.remove('bg-white', 'hover:bg-indigo-100', 'text-indigo-700', 'border-indigo-300');
+                btn.classList.add('bg-rose-600', 'hover:bg-rose-700', 'text-white', 'border-rose-700', 'shadow-sm');
+
+                clearTimeout(demoClearTimeout);
+                demoClearTimeout = setTimeout(() => {
+                    resetDemoClearButton();
+                }, 4000);
+                return;
+            }
+
+            clearTimeout(demoClearTimeout);
+            isConfirmingDemoClear = false;
+            clearDemoData();
+        }
+
+        function resetDemoClearButton() {
+            isConfirmingDemoClear = false;
+            const btn = document.getElementById('btn-limpar-demo');
+            if (!btn) return;
+            btn.textContent = 'Limpar Demonstração';
+            btn.classList.remove('bg-rose-600', 'hover:bg-rose-700', 'text-white', 'border-rose-700', 'shadow-sm');
+            btn.classList.add('bg-white', 'hover:bg-indigo-100', 'text-indigo-700', 'border-indigo-300');
+        }
+
+        function clearDemoData() {
+            appState = {
+                inactivityMonths: appState.inactivityMonths || 6,
+                isDemoData: false,
+                rooms: getMinimalRooms(),
+                screens: []
+            };
+            activeRoomFilter = 'ALL';
+            localStorage.setItem(INIT_FLAG_KEY, 'true');
+            saveToStorage();
+            resetDemoClearButton();
+            updateDemoBanner();
+            resetFilters(false);
+            refreshUI();
+            showToast('Dados de demonstração apagados! Seu catálogo está zerado e pronto para uso.', 'success');
+        }
+
+        function updateDemoBanner() {
+            const banner = document.getElementById('demo-banner');
+            if (appState.isDemoData) {
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // CÁLCULOS DE INATIVIDADE E STATUS
+        // ==========================================
+        function getDaysSince(dateString) {
+            if (!dateString) return 0;
+            const past = new Date(dateString + 'T00:00:00');
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const diffTime = now - past;
+            return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+        }
+
+        function formatRelativeTime(days) {
+            if (days === 0) return 'Hoje';
+            if (days === 1) return 'Ontem';
+            if (days < 30) return `há ${days} dias`;
+            const months = Math.floor(days / 30);
+            if (months === 1) return 'há 1 mês';
+            if (months < 12) return `há ${months} meses`;
+            const years = Math.floor(months / 12);
+            const remMonths = months % 12;
+            return remMonths > 0 ? `há ${years}a e ${remMonths}m` : `há ${years} ano(s)`;
+        }
+
+        function formatDateBR(dateString) {
+            if (!dateString) return '-';
+            const [y, m, d] = dateString.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        // Determina status geral da tela: 'AVAILABLE' | 'INACTIVE' | 'PARTIAL_INACTIVE' | 'ACTIVE'
+        function getScreenStatus(screen) {
+            if (screen.isClean || !screen.arts || screen.arts.length === 0) {
+                return 'AVAILABLE';
+            }
+            const thresholdDays = appState.inactivityMonths * 30;
+            const inactiveCount = screen.arts.filter(art => getDaysSince(art.lastOrderDate) >= thresholdDays).length;
+
+            if (inactiveCount === screen.arts.length) return 'INACTIVE';
+            if (inactiveCount > 0) return 'PARTIAL_INACTIVE';
+            return 'ACTIVE';
         }
 
         // Retorna data YYYY-MM-DD subtraindo N dias de hoje
@@ -819,7 +1106,17 @@
 
                 // Filtro Status
                 const status = getScreenStatus(screen);
-                if (statusFilter !== 'ALL' && status !== statusFilter) return false;
+                if (statusFilter !== 'ALL') {
+                    if (statusFilter === 'SHARED') {
+                        if (screen.isClean || !screen.arts || screen.arts.length < 2) return false;
+                    } else if (statusFilter === 'INACTIVE') {
+                        if (status !== 'INACTIVE' && status !== 'PARTIAL_INACTIVE') return false;
+                    } else if (statusFilter === 'ACTIVE') {
+                        if (status === 'AVAILABLE') return false;
+                    } else if (status !== statusFilter) {
+                        return false;
+                    }
+                }
 
                 // Filtro Categoria
                 if (categoryFilter !== 'ALL') {
@@ -892,8 +1189,11 @@
             } else if (status === 'INACTIVE') {
                 statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-800"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Candidata a Desfazer</span>`;
                 cardBorderClass = 'border-amber-300 ring-1 ring-amber-200';
+            } else if (status === 'PARTIAL_INACTIVE') {
+                statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 1 Arte Inativa</span>`;
+                cardBorderClass = 'border-amber-200';
             } else {
-                statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700"><i data-lucide="check" class="w-3.5 h-3.5"></i> Ativa</span>`;
+                statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700"><i data-lucide="check" class="w-3.5 h-3.5"></i> Em Uso</span>`;
             }
 
             // Badge de Tamanho
@@ -1226,10 +1526,356 @@
         // ==========================================
         // MODAL: GESTÃO DE QUARTOS E PRATELEIRAS
         // ==========================================
+        let pendingDeleteConfirmation = null;
+        let pendingDeleteTimer = null;
+
         function openSpacesModal() {
+            pendingDeleteConfirmation = null;
+            document.getElementById('total-rooms-input').value = appState.rooms.length;
             renderRoomsManagement();
             document.getElementById('spaces-modal').classList.remove('hidden');
             lucide.createIcons();
+        }
+
+        function closeSpacesModal() {
+            pendingDeleteConfirmation = null;
+            document.getElementById('spaces-modal').classList.add('hidden');
+            refreshUI();
+        }
+
+        function setTotalRoomsCount(event) {
+            event.preventDefault();
+            const targetCount = parseInt(document.getElementById('total-rooms-input').value, 10);
+            if (isNaN(targetCount) || targetCount < 1 || targetCount > 50) {
+                showToast('Informe uma quantidade válida entre 1 e 50 quartos.', 'error');
+                return;
+            }
+
+            const currentCount = appState.rooms.length;
+            if (targetCount === currentCount) {
+                showToast(`A estamparia já possui ${currentCount} quarto(s).`, 'info');
+                return;
+            }
+
+            if (targetCount > currentCount) {
+                for (let i = currentCount + 1; i <= targetCount; i++) {
+                    let candidateName = `Quarto ${i}`;
+                    let suffix = i;
+                    while (appState.rooms.some(r => r.name.toLowerCase() === candidateName.toLowerCase())) {
+                        suffix++;
+                        candidateName = `Quarto ${suffix}`;
+                    }
+                    appState.rooms.push({
+                        id: generateId('room'),
+                        name: candidateName,
+                        shelves: ['Prateleira 1']
+                    });
+                }
+                saveToStorage();
+                renderRoomsManagement();
+                showToast(`Quantidade ajustada para ${targetCount} quartos!`, 'success');
+            } else {
+                // Reduzir quartos a partir dos últimos (apenas se estiverem vazios)
+                const roomsToRemove = appState.rooms.slice(targetCount);
+                const occupiedRoom = roomsToRemove.find(r => appState.screens.some(s => s.roomId === r.id));
+                if (occupiedRoom) {
+                    showToast(`Não foi possível reduzir: o quarto "${occupiedRoom.name}" possui telas cadastradas.`, 'error');
+                    document.getElementById('total-rooms-input').value = appState.rooms.length;
+                    return;
+                }
+                appState.rooms = appState.rooms.slice(0, targetCount);
+                if (activeRoomFilter !== 'ALL' && !appState.rooms.some(r => r.id === activeRoomFilter)) {
+                    activeRoomFilter = 'ALL';
+                }
+                saveToStorage();
+                renderRoomsManagement();
+                showToast(`Quantidade ajustada para ${targetCount} quartos.`, 'info');
+            }
+        }
+
+        function renameRoom(roomId, newName) {
+            const trimmed = newName.trim();
+            const room = appState.rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            if (!trimmed) {
+                showToast('O nome do quarto não pode ficar em branco.', 'error');
+                renderRoomsManagement();
+                return;
+            }
+
+            if (room.name === trimmed) return;
+
+            room.name = trimmed;
+            saveToStorage();
+            renderRoomsManagement();
+            showToast(`Quarto renomeado para "${trimmed}"!`, 'success');
+        }
+
+        function setRoomShelvesCount(roomId, event) {
+            event.preventDefault();
+            const room = appState.rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            const input = document.getElementById(`shelves-count-${roomId}`);
+            const targetCount = parseInt(input.value, 10);
+            if (isNaN(targetCount) || targetCount < 1 || targetCount > 100) {
+                showToast('Informe entre 1 e 100 prateleiras.', 'error');
+                return;
+            }
+
+            const currentCount = room.shelves.length;
+            if (targetCount === currentCount) return;
+
+            if (targetCount > currentCount) {
+                for (let i = currentCount + 1; i <= targetCount; i++) {
+                    let candidate = `Prateleira ${i}`;
+                    let counter = i;
+                    while (room.shelves.some(sh => sh.toLowerCase() === candidate.toLowerCase())) {
+                        counter++;
+                        candidate = `Prateleira ${counter}`;
+                    }
+                    room.shelves.push(candidate);
+                }
+                saveToStorage();
+                renderRoomsManagement();
+                showToast(`"${room.name}" agora possui ${targetCount} prateleiras!`, 'success');
+            } else {
+                const shelvesToRemove = room.shelves.slice(targetCount);
+                const occupiedShelf = shelvesToRemove.find(sh =>
+                    appState.screens.some(s => s.roomId === roomId && s.shelf === sh)
+                );
+                if (occupiedShelf) {
+                    showToast(`A "${occupiedShelf}" possui telas cadastradas. Mova ou limpe-as antes de reduzir.`, 'error');
+                    input.value = room.shelves.length;
+                    return;
+                }
+                room.shelves = room.shelves.slice(0, targetCount);
+                saveToStorage();
+                renderRoomsManagement();
+                showToast(`Quantidade de prateleiras ajustada para ${targetCount}.`, 'info');
+            }
+        }
+
+        function renameShelf(roomId, shelfIndex, newShelfName) {
+            const trimmed = newShelfName.trim();
+            const room = appState.rooms.find(r => r.id === roomId);
+            if (!room || room.shelves[shelfIndex] === undefined) return;
+
+            const oldName = room.shelves[shelfIndex];
+            if (!trimmed) {
+                showToast('O nome da prateleira não pode ficar vazio.', 'error');
+                renderRoomsManagement();
+                return;
+            }
+
+            if (oldName === trimmed) return;
+
+            const duplicate = room.shelves.some((sh, idx) => idx !== shelfIndex && sh.toLowerCase() === trimmed.toLowerCase());
+            if (duplicate) {
+                showToast('Já existe uma prateleira com este nome neste quarto.', 'error');
+                renderRoomsManagement();
+                return;
+            }
+
+            // Atualiza o nome na lista do quarto e em todas as telas alocadas nesta prateleira
+            room.shelves[shelfIndex] = trimmed;
+            let updatedScreens = 0;
+            appState.screens.forEach(screen => {
+                if (screen.roomId === roomId && screen.shelf === oldName) {
+                    screen.shelf = trimmed;
+                    updatedScreens++;
+                }
+            });
+
+            saveToStorage();
+            renderRoomsManagement();
+            showToast(
+                updatedScreens > 0
+                    ? `Prateleira renomeada para "${trimmed}" (${updatedScreens} tela(s) atualizada(s))!`
+                    : `Prateleira renomeada para "${trimmed}"!`,
+                'success'
+            );
+        }
+
+        function renderRoomsManagement() {
+            const totalInput = document.getElementById('total-rooms-input');
+            if (totalInput) totalInput.value = appState.rooms.length;
+
+            const container = document.getElementById('rooms-management-list');
+            container.innerHTML = appState.rooms.map(room => {
+                const screenCount = appState.screens.filter(s => s.roomId === room.id).length;
+                const roomDeleteKey = `room:${room.id}`;
+                const isConfirmingRoomDel = pendingDeleteConfirmation === roomDeleteKey;
+
+                return `
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/80 space-y-4">
+                        <!-- Cabeçalho Editável do Quarto -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+                            <div class="flex items-center gap-2 flex-1">
+                                <div class="bg-amber-100 text-amber-700 p-2 rounded-xl shrink-0">
+                                    <i data-lucide="door-open" class="w-4 h-4"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nome do Quarto / Sala</label>
+                                    <input type="text" value="${escapeHTML(room.name)}" onchange="renameRoom('${room.id}', this.value)" class="w-full font-bold text-slate-900 text-sm bg-white border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-lg px-2.5 py-1.5 mt-0.5 transition" title="Clique para editar o nome do quarto">
+                                </div>
+                                <span class="text-xs font-semibold bg-white border border-slate-200 px-2.5 py-1.5 rounded-xl text-slate-600 shrink-0 self-end">
+                                    ${screenCount} ${screenCount === 1 ? 'tela' : 'telas'}
+                                </span>
+                            </div>
+
+                            ${appState.rooms.length > 1 ? `
+                                <button type="button" onclick="handleDeleteRoomClick('${room.id}')" class="self-end text-xs px-3 py-1.5 rounded-xl font-semibold transition shrink-0 ${isConfirmingRoomDel ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600 hover:bg-rose-50 border border-rose-200 bg-white'}">
+                                    ${isConfirmingRoomDel ? 'Confirmar Exclusão?' : 'Excluir Quarto'}
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <!-- Controle de Quantidade de Prateleiras do Quarto -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+                            <span class="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                                <i data-lucide="layers" class="w-3.5 h-3.5 text-amber-600"></i>
+                                Prateleiras neste quarto: <strong>${room.shelves.length}</strong>
+                            </span>
+                            <form onsubmit="setRoomShelvesCount('${room.id}', event)" class="flex items-center gap-1.5">
+                                <label for="shelves-count-${room.id}" class="text-xs text-slate-500">Definir qtd:</label>
+                                <input type="number" id="shelves-count-${room.id}" value="${room.shelves.length}" min="1" max="100" class="w-16 px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-center focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <button type="submit" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg text-xs font-semibold transition">
+                                    Atualizar
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Lista Editável Individual de Cada Prateleira -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            ${room.shelves.map((shelf, idx) => {
+                                const shelfCount = appState.screens.filter(s => s.roomId === room.id && s.shelf === shelf).length;
+                                const shelfDelKey = `shelf:${room.id}:${idx}`;
+                                const isConfirmingShelfDel = pendingDeleteConfirmation === shelfDelKey;
+
+                                return `
+                                    <div class="flex items-center gap-1.5 bg-white border border-slate-200 p-2 rounded-xl shadow-2xs">
+                                        <span class="text-[11px] font-bold text-slate-400 w-5 text-center shrink-0">#${idx + 1}</span>
+                                        <input type="text" value="${escapeHTML(shelf)}" onchange="renameShelf('${room.id}', ${idx}, this.value)" placeholder="Nome da prateleira" class="flex-1 min-w-0 text-xs font-semibold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-transparent focus:border-indigo-400 rounded-lg px-2 py-1.5 focus:outline-none transition" title="Edite o nome desta prateleira">
+                                        <span class="text-[10px] font-medium text-slate-400 shrink-0" title="${shelfCount} tela(s) nesta prateleira">${shelfCount}t</span>
+                                        ${room.shelves.length > 1 ? `
+                                            <button type="button" onclick="handleDeleteShelfClick('${room.id}', ${idx})" class="px-2 py-1 rounded-lg text-[11px] font-semibold transition shrink-0 ${isConfirmingShelfDel ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'}" title="Remover prateleira">
+                                                ${isConfirmingShelfDel ? 'Confirmar?' : '<i data-lucide="trash-2" class="w-3.5 h-3.5"></i>'}
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        <!-- Adicionar Prateleira Personalizada neste Quarto -->
+                        <div class="flex gap-2 pt-1">
+                            <input type="text" id="new-shelf-${room.id}" placeholder="Adicionar prateleira com nome (Ex: Prateleira A - Grandes)..." class="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500" onkeydown="if(event.key==='Enter'){event.preventDefault();addShelf('${room.id}');}">
+                            <button type="button" onclick="addShelf('${room.id}')" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shrink-0 transition">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Adicionar Prateleira
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function addRoom(event) {
+            event.preventDefault();
+            const input = document.getElementById('new-room-name');
+            const name = input.value.trim();
+            if (!name) return;
+
+            appState.rooms.push({
+                id: generateId('room'),
+                name: name,
+                shelves: ['Prateleira 1']
+            });
+            input.value = '';
+            saveToStorage();
+            renderRoomsManagement();
+            showToast(`Quarto "${name}" adicionado!`, 'success');
+        }
+
+        function handleDeleteRoomClick(roomId) {
+            const hasScreens = appState.screens.some(s => s.roomId === roomId);
+            if (hasScreens) {
+                showToast('Não é possível excluir um quarto que possui telas cadastradas. Mova ou exclua as telas antes.', 'error');
+                return;
+            }
+
+            const key = `room:${roomId}`;
+            if (pendingDeleteConfirmation !== key) {
+                pendingDeleteConfirmation = key;
+                clearTimeout(pendingDeleteTimer);
+                pendingDeleteTimer = setTimeout(() => {
+                    pendingDeleteConfirmation = null;
+                    renderRoomsManagement();
+                }, 4000);
+                renderRoomsManagement();
+                return;
+            }
+
+            clearTimeout(pendingDeleteTimer);
+            pendingDeleteConfirmation = null;
+            appState.rooms = appState.rooms.filter(r => r.id !== roomId);
+            if (activeRoomFilter === roomId) activeRoomFilter = 'ALL';
+            saveToStorage();
+            renderRoomsManagement();
+            showToast('Quarto removido.', 'info');
+        }
+
+        function addShelf(roomId) {
+            const input = document.getElementById(`new-shelf-${roomId}`);
+            const shelfName = input.value.trim();
+            if (!shelfName) return;
+
+            const room = appState.rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            if (room.shelves.some(sh => sh.toLowerCase() === shelfName.toLowerCase())) {
+                showToast('Já existe uma prateleira com esse nome neste quarto.', 'error');
+                return;
+            }
+
+            room.shelves.push(shelfName);
+            input.value = '';
+            saveToStorage();
+            renderRoomsManagement();
+            showToast(`Prateleira "${shelfName}" adicionada!`, 'success');
+        }
+
+        function handleDeleteShelfClick(roomId, shelfIndex) {
+            const room = appState.rooms.find(r => r.id === roomId);
+            if (!room) return;
+            const shelfName = room.shelves[shelfIndex];
+
+            const inUse = appState.screens.some(s => s.roomId === roomId && s.shelf === shelfName);
+            if (inUse) {
+                showToast(`A prateleira "${shelfName}" possui telas guardadas nela. Mova-as antes de excluir.`, 'error');
+                return;
+            }
+
+            const key = `shelf:${roomId}:${shelfIndex}`;
+            if (pendingDeleteConfirmation !== key) {
+                pendingDeleteConfirmation = key;
+                clearTimeout(pendingDeleteTimer);
+                pendingDeleteTimer = setTimeout(() => {
+                    pendingDeleteConfirmation = null;
+                    renderRoomsManagement();
+                }, 4000);
+                renderRoomsManagement();
+                return;
+            }
+
+            clearTimeout(pendingDeleteTimer);
+            pendingDeleteConfirmation = null;
+            room.shelves.splice(shelfIndex, 1);
+            saveToStorage();
+            renderRoomsManagement();
+            showToast(`Prateleira "${shelfName}" removida.`, 'info');
         }
 
         function closeSpacesModal() {
@@ -1455,6 +2101,7 @@
             const statusLabels = {
                 'AVAILABLE': 'Disponível / Limpa',
                 'INACTIVE': 'Candidata a Desfazer',
+                'PARTIAL_INACTIVE': '1 Arte Inativa (Compartilhada)',
                 'ACTIVE': 'Ativa'
             };
 
