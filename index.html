@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido de Bottons Personalizados - Itapeva SP</title>
+    <!-- Tailwind CSS para um design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- Cropper.js para o recorte circular da imagem -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <style>
+        .cropper-view-box, .cropper-face {
+            border-radius: 50%;
+        }
+        input[type="file"]::file-selector-button {
+            background-color: #4f46e5;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: #4338ca;
+        }
+        .progress-bar-fill {
+            transition: width 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen py-8 px-4 pb-28 transition-colors duration-200">
+
+    <div class="max-w-md mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 transition-colors duration-200">
+        <!-- Cabeçalho com botão de Alternar Modo Escuro -->
+        <div class="bg-indigo-600 dark:bg-indigo-700 text-white p-6 text-center relative">
+            <button type="button" id="toggleDarkModeBtn" onclick="toggleDarkMode()" 
+                class="absolute top-4 right-4 bg-indigo-700 dark:bg-indigo-800 hover:bg-indigo-800 dark:hover:bg-indigo-900 text-xs px-2.5 py-1.5 rounded-full transition flex items-center space-x-1"
+                title="Alternar Modo Escuro">
+                <span id="darkModeIcon">🌙</span>
+            </button>
+            <h1 class="text-2xl font-bold">🔘 Faça seu pedido! 😉</h1>
+            <p class="text-indigo-100 text-sm mt-1">Personalize o seu e faça o pedido direto pelo WhatsApp!</p>
+        </div>
+
+        <!-- Formulário -->
+        <form id="orderForm" class="p-6 space-y-5">
+            
+            <!-- 1. Nome -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">1. Seu Nome:</label>
+                <input type="text" id="nome" required 
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:bg-slate-700 dark:text-white"
+                    placeholder="Digite seu nome completo">
+            </div>
+
+            <!-- 2. Telefone com Máscara Automática -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">2. Número de Telefone (WhatsApp):</label>
+                <input type="tel" id="telefone" required maxlength="15"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:bg-slate-700 dark:text-white"
+                    placeholder="(15) 99999-9999">
+            </div>
+
+            <!-- 3 e 4. Escolha de Quantidades por Tamanho e Tabela de Preços Progressiva -->
+            <div class="space-y-4">
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">3. Escolha a Quantidade por Tamanho:</label>
+                
+                <!-- Controle 37mm -->
+                <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
+                    <div>
+                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Botton 37mm (Pequeno)</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Progressivo de R$ 4,00 a R$ 1,60/un</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="alterarQtd('37mm', -1)" class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900 transition">-</button>
+                        <span id="qtd37" class="w-8 text-center font-bold text-slate-800 dark:text-slate-200">0</span>
+                        <button type="button" onclick="alterarQtd('37mm', 1)" class="w-8 h-8 bg-indigo-600 dark:bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition">+</button>
+                    </div>
+                </div>
+
+                <!-- Controle 58mm -->
+                <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
+                    <div>
+                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Botton 58mm (Grande)</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Progressivo de R$ 8,00 a R$ 3,20/un</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="alterarQtd('58mm', -1)" class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900 transition">-</button>
+                        <span id="qtd58" class="w-8 text-center font-bold text-slate-800 dark:text-slate-200">0</span>
+                        <button type="button" onclick="alterarQtd('58mm', 1)" class="w-8 h-8 bg-indigo-600 dark:bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition">+</button>
+                    </div>
+                </div>
+
+                <!-- Tabela de Preços Progressiva Informativa com Barra de Progresso de Frete -->
+                <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 p-3 rounded-lg text-xs text-indigo-900 dark:text-indigo-200 space-y-2">
+                    <p class="font-semibold text-indigo-950 dark:text-indigo-100 mb-1">📋 Tabela de Preços Progressiva:</p>
+                    <div class="grid grid-cols-3 gap-1 font-medium border-b border-indigo-200 dark:border-indigo-800 pb-1 text-[11px] text-indigo-900 dark:text-indigo-300">
+                        <span>Qtd</span>
+                        <span>37mm (Peq.)</span>
+                        <span>58mm (Gran.)</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
+                        <span>1 a 9 un.</span>
+                        <span>R$ 4,00 /un</span>
+                        <span>R$ 8,00 /un</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
+                        <span>10 a 29 un.</span>
+                        <span>R$ 3,10 /un</span>
+                        <span>R$ 6,20 /un</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
+                        <span>30 a 49 un.</span>
+                        <span>R$ 2,50 /un</span>
+                        <span>R$ 5,00 /un</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
+                        <span>50 a 99 un.</span>
+                        <span>R$ 1,95 /un</span>
+                        <span>R$ 3,90 /un</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
+                        <span>100+ un.</span>
+                        <span>R$ 1,60 /un</span>
+                        <span>R$ 3,20 /un</span>
+                    </div>
+
+                    <!-- Barra de Progresso Visual de Frete Grátis -->
+                    <div id="containerStatusFrete" class="pt-2 border-t border-indigo-200 dark:border-indigo-800/60 mt-2 space-y-1.5 hidden">
+                        <div class="flex justify-between items-center text-[11px]">
+                            <span id="statusFreteGratis" class="font-bold text-emerald-700 dark:text-emerald-400"></span>
+                        </div>
+                        <div class="w-full bg-indigo-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                            <div id="barraProgressoFrete" class="bg-emerald-600 dark:bg-emerald-500 h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="freteInfoContainer" class="hidden text-amber-800 dark:text-amber-300 pt-1 border-t border-indigo-200 dark:border-indigo-800/60 space-y-0.5">
+                        <p id="freteTextoValor">• **Taxa de Entrega:** R$ 8,00</p>
+                    </div>
+
+                    <p id="valorTotalPrev" class="font-bold text-indigo-700 dark:text-indigo-300 pt-2 border-t border-indigo-200 dark:border-indigo-800/60 mt-2 text-sm">
+                        👉 Adicione bottons usando os botões acima para ver o total estimado.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 5. Forma de Pagamento -->
+            <div class="space-y-3 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">5. Forma de Pagamento:</label>
+                <div class="flex space-x-6">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" name="pagamento" value="Pix" required class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Pix</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" name="pagamento" value="Dinheiro" required class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Dinheiro</span>
+                    </label>
+                </div>
+
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 italic">💡 Se escolher pagamento via Pix, a chave e os dados serão enviados via WhatsApp, após a conclusão do pedido.</p>
+
+                <!-- Pergunta condicional de troco via Pix (aparece só se escolher Dinheiro) -->
+                <div id="trocoContainer" class="hidden pt-3 border-t border-slate-200 dark:border-slate-600 space-y-2">
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Precisa de troco para quanto? (Ou troco em dinheiro)</label>
+                    <input type="text" id="trocoValor" 
+                        class="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:bg-slate-700 dark:text-white"
+                        placeholder="Ex: Para R$ 50,00">
+                    
+                    <div class="flex items-start space-x-2 pt-1">
+                        <input type="checkbox" id="aceitaTrocoPix" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mt-0.5">
+                        <label for="aceitaTrocoPix" class="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                            Aceita receber o troco via Pix?
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Retirada no Endereço do Vendedor ou Entrega -->
+            <div class="space-y-3 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
+                <div class="flex items-start space-x-3">
+                    <input type="checkbox" id="retiradaLoja" class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 mt-0.5">
+                    <label for="retiradaLoja" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        Retirar o pedido no endereço do vendedor<br>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">Rua Clovis Mendes Garcia, Centro, 31 (CEP: 18400-085)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 7. Endereço de Entrega Detalhado com Consulta de CEP -->
+            <div id="enderecoContainer" class="space-y-3">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">7. CEP de Entrega (Itapeva - SP):</label>
+                    <input type="text" id="cep" maxlength="9" 
+                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono dark:bg-slate-700 dark:text-white"
+                        placeholder="18400-000">
+                    <p id="cepFeedback" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Digite o CEP para buscar o endereço automaticamente.</p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Rua:</label>
+                        <input type="text" id="rua" required
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-slate-100 dark:bg-slate-700 dark:text-slate-200"
+                            placeholder="Preenchimento automático" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Número:</label>
+                        <input type="text" id="numero" required
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm transition-all dark:bg-slate-700 dark:text-white"
+                            placeholder="Ex: 123">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bairro:</label>
+                        <input type="text" id="bairro" required
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-slate-100 dark:bg-slate-700 dark:text-slate-200"
+                            placeholder="Preenchimento automático" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Apto / Bloco (Opcional):</label>
+                        <input type="text" id="complemento" 
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm dark:bg-slate-700 dark:text-white"
+                            placeholder="Ex: Apto 42B">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ponto de Referência:</label>
+                    <input type="text" id="referencia" 
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm dark:bg-slate-700 dark:text-white"
+                        placeholder="Ex: Próximo à praça, casa com portão branco">
+                </div>
+
+                <!-- Entregar para o vizinho -->
+                <div class="flex items-start space-x-3 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600 mt-2">
+                    <input type="checkbox" id="entregaVizinho" class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 mt-0.5">
+                    <label for="entregaVizinho" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        Caso eu não esteja em casa, autorizo a entrega para um vizinho.
+                    </label>
+                </div>
+            </div>
+
+            <!-- 8. Termo de Ciência de Venda Exclusiva em Itapeva SP -->
+            <div class="flex items-start space-x-3 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg border border-amber-200 dark:border-amber-900/50">
+                <input type="checkbox" id="cienciaItapeva" required class="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 mt-0.5">
+                <label for="cienciaItapeva" class="text-xs font-medium text-amber-900 dark:text-amber-200 cursor-pointer">
+                    Estou ciente de que o comércio opera exclusivamente em Itapeva - SP.
+                </label>
+            </div>
+
+            <!-- 9. Envio e Simulação da Arte no Botton (Opcional) -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">9. Simulação da Arte no Botton (Opcional):</label>
+                <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 p-3 rounded-lg text-xs text-indigo-950 dark:text-indigo-200 space-y-1.5 mb-2">
+                    <p>🎨 <strong>Quer ver como sua arte vai ficar?</strong> Este recurso abaixo é apenas um simulador visual para você testar e ajustar o corte da sua imagem dentro do formato redondo de um botton!</p>
+                    <p>📸 <em>Diferentes imagens:</em> Pode enviar imagens diferentes! Se preferir, você também pode enviar as artes distintas diretamente na conversa do WhatsApp após enviar o pedido.</p>
+                    <p>💡 <em>Dica de Qualidade:</em> O ideal é enviar imagens acima de <strong>1000x1000 pixels</strong>.</p>
+                </div>
+                
+                <input type="file" id="uploadImage" accept="image/png, image/jpeg, image/jpg, image/webp"
+                    class="w-full text-sm text-slate-500 dark:text-slate-400 cursor-pointer">
+            </div>
+
+            <!-- Área de Ajuste/Crop (Oculta até carregar a imagem) -->
+            <div id="cropAreaContainer" class="hidden space-y-3 border border-indigo-200 dark:border-indigo-800 p-4 rounded-xl bg-indigo-50/50 dark:bg-slate-700/50">
+                <div class="max-h-64 overflow-hidden flex justify-center">
+                    <img id="imageToCrop" class="max-w-full">
+                </div>
+                <button type="button" id="cropBtn" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition text-sm">
+                    ✂️ Confirmar Recorte Circular
+                </button>
+            </div>
+
+            <!-- Pré-visualização da imagem recortada -->
+            <div id="previewContainer" class="hidden text-center space-y-2">
+                <p class="text-xs font-medium text-slate-600 dark:text-slate-400">Simulação da Arte Pronta:</p>
+                <img id="croppedResult" class="w-24 h-24 object-cover rounded-full mx-auto border-2 border-indigo-500 shadow-md">
+                <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Visualização gerada com sucesso!</p>
+            </div>
+
+            <!-- Seção de FAQ (Perguntas Frequentes) -->
+            <div class="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">❓ Dúvidas Frequentes (FAQ)</h3>
+                
+                <div class="bg-slate-50 dark:bg-slate-700/40 p-3 rounded-lg border border-slate-200 dark:border-slate-600 text-xs space-y-1">
+                    <p class="font-semibold text-indigo-900 dark:text-indigo-300">⏱️ Qual é o prazo de produção?</p>
+                    <p class="text-slate-600 dark:text-slate-300">O prazo de produção e preparo do pedido leva de <strong>3 a 7 dias úteis</strong> após a confirmação do pagamento e aprovação das artes.</p>
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-700/40 p-3 rounded-lg border border-slate-200 dark:border-slate-600 text-xs space-y-1">
+                    <p class="font-semibold text-indigo-900 dark:text-indigo-300">🖼️ Posso pedir bottons com imagens diferentes?</p>
+                    <p class="text-slate-600 dark:text-slate-300">Sim! Se você pedir vários bottons, pode enviar imagens e artes diferentes diretamente no nosso chat do WhatsApp logo após finalizar o pedido.</p>
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-700/40 p-3 rounded-lg border border-slate-200 dark:border-slate-600 text-xs space-y-1">
+                    <p class="font-semibold text-indigo-900 dark:text-indigo-300">📍 Onde é feita a retirada?</p>
+                    <p class="text-slate-600 dark:text-slate-300">Para quem opta pela retirada, estamos localizados na Rua Clovis Mendes Garcia, Centro, 31 (Itapeva - SP).</p>
+                </div>
+            </div>
+
+            <!-- Botão de Envio e Botão de Cópia (Fallback) -->
+            <div class="space-y-2 pt-2">
+                <button type="submit" 
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg flex items-center justify-center space-x-2">
+                    <span>📲 Enviar Pedido para o WhatsApp</span>
+                </button>
+                <button type="button" id="btnCopiarTexto" onclick="copiarTextoPedido()"
+                    class="w-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2 rounded-xl transition text-xs flex items-center justify-center space-x-1">
+                    <span>📋 Copiar texto do pedido (Caso o WhatsApp não abra)</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Barra Flutuante de Resumo (Carrinho) -->
+    <div id="barraFlutuante" class="fixed bottom-0 left-0 right-0 bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur text-white p-3 shadow-2xl border-t border-slate-800 transition-transform duration-300 transform translate-y-full z-40">
+        <div class="max-w-md mx-auto flex items-center justify-between text-xs sm:text-sm">
+            <div>
+                <p id="resumoPecas" class="font-bold text-indigo-300">0 bottons</p>
+                <p id="resumoValorTotal" class="font-extrabold text-emerald-400 text-base">R$ 0,00</p>
+            </div>
+            <button type="button" onclick="document.getElementById('orderForm').requestSubmit()" 
+                class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-lg shadow transition text-xs sm:text-sm flex items-center space-x-1">
+                <span>Finalizar Pedido 📲</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação Visutal Pós-Envio -->
+    <div id="modalRedirecionamento" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-100 dark:border-slate-700 animate-bounce-short">
+            <div class="text-4xl">📲</div>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Redirecionando para o WhatsApp...</h3>
+            <p class="text-xs text-slate-600 dark:text-slate-300">
+                O seu resumo de pedido foi gerado! <strong>Lembre-se de enviar a mensagem e anexar as fotos/artes</strong> na conversa com o vendedor.
+            </p>
+            <div class="pt-2">
+                <button type="button" onclick="fecharModalRedirecionamento()" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl text-xs transition">
+                    Entendido!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts do Cropper.js e Lógica do Sistema -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        const WHATSAPP_NUMERO_LOJA = "5515997259823";
+        const LOJA_CEP = "18400085";
+
+        let qtd37 = 0;
+        let qtd58 = 0;
+
+        // Gerenciamento do Modo Escuro (Dark Mode)
+        function initDarkMode() {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('darkModeIcon').textContent = '☀️';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('darkModeIcon').textContent = '🌙';
+            }
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                document.getElementById('darkModeIcon').textContent = '🌙';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                document.getElementById('darkModeIcon').textContent = '☀️';
+            }
+        }
+
+        // Carregar preferências e dados ao carregar a página
+        window.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+
+            if (localStorage.getItem('cliente_nome')) {
+                document.getElementById('nome').value = localStorage.getItem('cliente_nome');
+            }
+            if (localStorage.getItem('cliente_tel')) {
+                document.getElementById('telefone').value = localStorage.getItem('cliente_tel');
+            }
+        });
+
+        function alterarQtd(tamanho, delta) {
+            if (tamanho === '37mm') {
+                qtd37 = Math.max(0, qtd37 + delta);
+                document.getElementById('qtd37').textContent = qtd37;
+            } else if (tamanho === '58mm') {
+                qtd58 = Math.max(0, qtd58 + delta);
+                document.getElementById('qtd58').textContent = qtd58;
+            }
+            atualizarPreco();
+        }
+
+        // Máscara automática para o telefone
+        const telefoneInput = document.getElementById('telefone');
+        telefoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 11) value = value.slice(0, 11);
+            
+            if (value.length > 7) {
+                value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+            } else if (value.length > 2) {
+                value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+            } else if (value.length > 0) {
+                value = `(${value}`;
+            }
+            e.target.value = value;
+        });
+
+        // Máscara e consulta automática de CEP
+        const cepInput = document.getElementById('cep');
+        const cepFeedback = document.getElementById('cepFeedback');
+        const ruaInput = document.getElementById('rua');
+        const bairroInput = document.getElementById('bairro');
+        const numeroInput = document.getElementById('numero');
+
+        cepInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 8) value = value.slice(0, 8);
+            if (value.length > 5) {
+                value = `${value.slice(0, 5)}-${value.slice(5)}`;
+            }
+            e.target.value = value;
+
+            if (value.length === 9) {
+                let cepLimpo = value.replace('-', '');
+                cepFeedback.textContent = "Buscando endereço...";
+                cepFeedback.className = "text-[11px] text-indigo-600 dark:text-indigo-400 mt-1";
+
+                fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.erro) {
+                            cepFeedback.textContent = "❌ CEP não encontrado.";
+                            cepFeedback.className = "text-[11px] text-rose-600 dark:text-rose-400 mt-1";
+                            ruaInput.value = "";
+                            bairroInput.value = "";
+                        } else if (data.localidade.toLowerCase() !== 'itapeva' || data.uf !== 'SP') {
+                            cepFeedback.textContent = "❌ Atendimento exclusivo para Itapeva - SP.";
+                            cepFeedback.className = "text-[11px] text-rose-600 dark:text-rose-400 mt-1";
+                            ruaInput.value = "";
+                            bairroInput.value = "";
+                        } else {
+                            cepFeedback.textContent = "✓ Endereço localizado em Itapeva - SP!";
+                            cepFeedback.className = "text-[11px] text-emerald-600 dark:text-emerald-400 mt-1";
+                            ruaInput.value = data.logradouro;
+                            bairroInput.value = data.bairro;
+                            
+                            // Destaque visual no campo Número
+                            numeroInput.classList.add('ring-2', 'ring-indigo-500', 'bg-yellow-50', 'dark:bg-indigo-900/40');
+                            numeroInput.focus();
+                            setTimeout(() => {
+                                numeroInput.classList.remove('bg-yellow-50', 'dark:bg-indigo-900/40');
+                            }, 2000);
+                        }
+                    })
+                    .catch(() => {
+                        cepFeedback.textContent = "❌ Erro ao consultar o CEP.";
+                        cepFeedback.className = "text-[11px] text-rose-600 dark:text-rose-400 mt-1";
+                    });
+            }
+        });
+
+        const retiradaCheckbox = document.getElementById('retiradaLoja');
+        const enderecoContainer = document.getElementById('enderecoContainer');
+        const freteInfoContainer = document.getElementById('freteInfoContainer');
+        const freteTextoValor = document.getElementById('freteTextoValor');
+        const containerStatusFrete = document.getElementById('containerStatusFrete');
+        const statusFreteGratis = document.getElementById('statusFreteGratis');
+        const barraProgressoFrete = document.getElementById('barraProgressoFrete');
+        const barraFlutuante = document.getElementById('barraFlutuante');
+        
+        const complementoInput = document.getElementById('complemento');
+        const referenciaInput = document.getElementById('referencia');
+        const entregaVizinhoCheckbox = document.getElementById('entregaVizinho');
+        
+        const valorTotalPrev = document.getElementById('valorTotalPrev');
+
+        const radiosPagamento = document.getElementsByName('pagamento');
+        const trocoContainer = document.getElementById('trocoContainer');
+        const trocoValorInput = document.getElementById('trocoValor');
+        const aceitaTrocoPixCheckbox = document.getElementById('aceitaTrocoPix');
+
+        const uploadImage = document.getElementById('uploadImage');
+        const imageToCrop = document.getElementById('imageToCrop');
+        const cropAreaContainer = document.getElementById('cropAreaContainer');
+        const cropBtn = document.getElementById('cropBtn');
+        const previewContainer = document.getElementById('previewContainer');
+        const croppedResult = document.getElementById('croppedResult');
+
+        let cropper = null;
+        let croppedBlobUrl = null;
+        let croppedFileBlob = null;
+
+        function getPreco37(qtd) {
+            if (qtd >= 100) return 1.60;
+            if (qtd >= 50) return 1.95;
+            if (qtd >= 30) return 2.50;
+            if (qtd >= 10) return 3.10;
+            return 4.00;
+        }
+
+        function getPreco58(qtd) {
+            if (qtd >= 100) return 3.20;
+            if (qtd >= 50) return 3.90;
+            if (qtd >= 30) return 5.00;
+            if (qtd >= 10) return 6.20;
+            return 8.00;
+        }
+
+        function atualizarPreco() {
+            const totalPecas = qtd37 + qtd58;
+
+            if (totalPecas === 0) {
+                containerStatusFrete.classList.add('hidden');
+                freteInfoContainer.classList.add('hidden');
+                valorTotalPrev.textContent = "👉 Adicione bottons usando os botões acima para ver o total estimado.";
+                barraFlutuante.classList.add('translate-y-full');
+                return;
+            }
+
+            barraFlutuante.classList.remove('translate-y-full');
+
+            const precoUnit37 = getPreco37(qtd37);
+            const precoUnit58 = getPreco58(qtd58);
+
+            const subtotal37 = qtd37 * precoUnit37;
+            const subtotal58 = qtd58 * precoUnit58;
+            const subtotal = subtotal37 + subtotal58;
+
+            let frete = 0;
+
+            containerStatusFrete.classList.remove('hidden');
+            
+            let percentualFrete = Math.min(100, (subtotal / 70) * 100);
+            barraProgressoFrete.style.width = percentualFrete + '%';
+
+            if (subtotal > 70.00) {
+                statusFreteGratis.innerHTML = `✨ PARABÉNS! Você ganhou <strong>FRETE GRÁTIS</strong>!`;
+                barraProgressoFrete.className = "bg-emerald-500 h-2.5 rounded-full progress-bar-fill";
+            } else {
+                let falta = (70.01 - subtotal).toFixed(2).replace('.', ',');
+                statusFreteGratis.innerHTML = `✨ Faltam R$ ${falta} para FRETE GRÁTIS`;
+                barraProgressoFrete.className = "bg-indigo-600 dark:bg-indigo-500 h-2.5 rounded-full progress-bar-fill";
+            }
+
+            if (!retiradaCheckbox.checked) {
+                if (subtotal > 70.00) {
+                    frete = 0;
+                    freteInfoContainer.classList.remove('hidden');
+                    freteTextoValor.innerHTML = `• <s>Taxa de Entrega: R$ 8,00</s> <span class="text-emerald-600 dark:text-emerald-400 font-bold">FRETE GRÁTIS!</span>`;
+                } else {
+                    frete = 8.00;
+                    freteInfoContainer.classList.remove('hidden');
+                    freteTextoValor.innerHTML = `• **Taxa de Entrega:** R$ 8,00`;
+                }
+            } else {
+                freteInfoContainer.classList.add('hidden');
+            }
+
+            let total = subtotal + frete;
+
+            let textoTotal = `Total estimado: R$ ${total.toFixed(2).replace('.', ',')} (R$ ${subtotal.toFixed(2).replace('.', ',')} dos bottons`;
+            if (!retiradaCheckbox.checked) {
+                if (frete === 0) {
+                    textoTotal += ` + R$ 0,00 do frete grátis`;
+                } else {
+                    textoTotal += ` + R$ 8,00 do frete`;
+                }
+            } else {
+                textoTotal += ` + R$ 0,00 da retirada`;
+            }
+            textoTotal += `)`;
+
+            valorTotalPrev.textContent = textoTotal;
+
+            document.getElementById('resumoPecas').textContent = `${totalPecas} unidade(s)`;
+            document.getElementById('resumoValorTotal').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        }
+
+        retiradaCheckbox.addEventListener('change', atualizarPreco);
+
+        radiosPagamento.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'Dinheiro') {
+                    trocoContainer.classList.remove('hidden');
+                } else {
+                    trocoContainer.classList.add('hidden');
+                    trocoValorInput.value = '';
+                    aceitaTrocoPixCheckbox.checked = false;
+                }
+            });
+        });
+
+        retiradaCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                enderecoContainer.style.display = 'none';
+                cepInput.required = false;
+                ruaInput.required = false;
+                bairroInput.required = false;
+                numeroInput.required = false;
+                cepInput.value = '';
+                ruaInput.value = '';
+                bairroInput.value = '';
+                numeroInput.value = '';
+                complementoInput.value = '';
+                referenciaInput.value = '';
+                entregaVizinhoCheckbox.checked = false;
+            } else {
+                enderecoContainer.style.display = 'block';
+                cepInput.required = true;
+                ruaInput.required = true;
+                bairroInput.required = true;
+                numeroInput.required = true;
+            }
+            atualizarPreco();
+        });
+
+        uploadImage.addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imageToCrop.src = event.target.result;
+                    cropAreaContainer.classList.remove('hidden');
+                    previewContainer.classList.add('hidden');
+
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+
+                    cropper = new Cropper(imageToCrop, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 0.9,
+                        restore: false,
+                        guides: false,
+                        center: false,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        cropBtn.addEventListener('click', function() {
+            if (!cropper) return;
+
+            const canvas = cropper.getCroppedCanvas({
+                width: 1000,
+                height: 1000,
+            });
+
+            canvas.toBlob(function(blob) {
+                croppedFileBlob = blob;
+                croppedBlobUrl = URL.createObjectURL(blob);
+                
+                croppedResult.src = croppedBlobUrl;
+                previewContainer.classList.remove('hidden');
+                cropAreaContainer.classList.add('hidden');
+
+                const link = document.createElement('a');
+                link.href = croppedBlobUrl;
+                link.download = 'arte-botton.png';
+                link.click();
+            }, 'image/png');
+        });
+
+        function montarTextoPedido() {
+            const nome = document.getElementById('nome').value;
+            const telefone = telefoneInput.value;
+
+            localStorage.setItem('cliente_nome', nome);
+            localStorage.setItem('cliente_tel', telefone);
+            
+            let formaPagamento = "";
+            radiosPagamento.forEach(r => { if (r.checked) formaPagamento = r.value; });
+
+            let pagamentoTexto = formaPagamento;
+            if (formaPagamento === 'Pix') {
+                pagamentoTexto += " (Chave e dados serão enviados via WhatsApp após a conclusão do pedido)";
+            } else if (formaPagamento === 'Dinheiro') {
+                const troco = trocoValorInput.value.trim();
+                const aceitaPix = aceitaTrocoPixCheckbox.checked ? "Sim" : "Não";
+                pagamentoTexto += troco ? ` (Precisa de troco para: ${troco})` : " (Sem troco informado)";
+                pagamentoTexto += `\n*Aceita troco em Pix:* ${aceitaPix}`;
+            }
+
+            const isRetirada = retiradaCheckbox.checked;
+            const cep = cepInput.value.trim();
+            const rua = ruaInput.value.trim();
+            const numero = numeroInput.value.trim();
+            const bairro = bairroInput.value.trim();
+            const complemento = complementoInput.value.trim();
+            const referencia = referenciaInput.value.trim();
+            const autorizaVizinho = entregaVizinhoCheckbox.checked;
+
+            let subtotal37 = 0;
+            let subtotal58 = 0;
+            let descItens = "";
+
+            if (qtd37 > 0) {
+                let p37 = getPreco37(qtd37);
+                subtotal37 = qtd37 * p37;
+                descItens += `• ${qtd37}x Botton 37mm (R$ ${p37.toFixed(2).replace('.', ',')} cada) = R$ ${subtotal37.toFixed(2).replace('.', ',')}\n`;
+            }
+
+            if (qtd58 > 0) {
+                let p58 = getPreco58(qtd58);
+                subtotal58 = qtd58 * p58;
+                descItens += `• ${qtd58}x Botton 58mm (R$ ${p58.toFixed(2).replace('.', ',')} cada) = R$ ${subtotal58.toFixed(2).replace('.', ',')}\n`;
+            }
+
+            let subtotal = subtotal37 + subtotal58;
+            let frete = isRetirada ? 0 : (subtotal > 70.00 ? 0 : 8.00);
+            let valorTotal = subtotal + frete;
+
+            let subtotalFormatado = subtotal.toFixed(2).replace('.', ',');
+            let freteFormatado = frete.toFixed(2).replace('.', ',');
+            let valorTotalFormatado = valorTotal.toFixed(2).replace('.', ',');
+
+            let entregaTexto = "";
+            if (isRetirada) {
+                entregaTexto = "Retirar no endereço do vendedor (Rua Clovis Mendes Garcia, Centro, 31)";
+            } else {
+                let compTexto = complemento ? `, ${complemento}` : "";
+                let refTexto = referencia ? `\n*Referência:* ${referencia}` : "";
+                let vizinhoTexto = autorizaVizinho ? "\n*Autoriza entrega ao vizinho:* Sim" : "\n*Autoriza entrega ao vizinho:* Não";
+                entregaTexto = `Endereço: ${rua}, Nº ${numero}${compTexto} - Bairro: ${bairro} (CEP: ${cep})${refTexto}${vizinhoTexto}`;
+            }
+
+            let freteTextoMensagem = isRetirada ? 
+                "R$ 0,00 (Retirada com o vendedor)" : 
+                (frete === 0 ? "R$ 0,00 (FRETE GRÁTIS - Acima de R$ 70,00)" : `R$ ${freteFormatado}`);
+
+            let arteMensagem = croppedFileBlob ? 
+                "_(O cliente utilizou o simulador e a foto recortada foi baixada no celular dele para envio. Mais artes diferentes podem ser enviadas aqui no chat!)_" : 
+                "_(O cliente não utilizou o simulador de imagem e enviará as artes diferentes por aqui no chat)_";
+
+            return `*Novo Pedido de Botton!* 🔘\n\n` +
+                   `*Nome:* ${nome}\n` +
+                   `*Telefone:* ${telefone}\n\n` +
+                   `*Itens do Pedido:*\n${descItens}\n` +
+                   `*Valor dos Bottons:* R$ ${subtotalFormatado}\n` +
+                   `*Valor do Frete:* ${freteTextoMensagem}\n` +
+                   `*Valor Total:* R$ ${valorTotalFormatado} (R$ ${subtotalFormatado} dos bottons + R$ ${freteFormatado} do frete)\n\n` +
+                   `*Pagamento:* ${pagamentoTexto}\n` +
+                   `*Modalidade:* ${entregaTexto}\n\n` +
+                   `_*(Cliente ciente de que o comércio opera exclusivamente em Itapeva - SP)*_\n\n` +
+                   `${arteMensagem}`;
+        }
+
+        function fecharModalRedirecionamento() {
+            document.getElementById('modalRedirecionamento').classList.add('hidden');
+        }
+
+        function copiarTextoPedido() {
+            if (qtd37 === 0 && qtd58 === 0) {
+                alert('Por favor, adicione pelo menos um botton antes de copiar o pedido!');
+                return;
+            }
+            if (!document.getElementById('nome').value || !telefoneInput.value) {
+                alert('Por favor, preencha pelo menos seu Nome e Telefone!');
+                return;
+            }
+
+            const texto = montarTextoPedido();
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('✓ Texto do pedido copiado com sucesso! Cole na conversa do WhatsApp com o vendedor.');
+            }).catch(() => {
+                alert('Não foi possível copiar automaticamente. Selecione e copie o texto manualmente.');
+            });
+        }
+
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (qtd37 === 0 && qtd58 === 0) {
+                alert('Por favor, adicione pelo menos um botton (37mm ou 58mm) antes de enviar o pedido!');
+                return;
+            }
+
+            const textoMensagem = montarTextoPedido();
+            const urlWhatsApp = `https://wa.me/${WHATSAPP_NUMERO_LOJA}?text=${encodeURIComponent(textoMensagem)}`;
+
+            // Exibir Modal Informativo
+            document.getElementById('modalRedirecionamento').classList.remove('hidden');
+
+            // Abrir WhatsApp
+            setTimeout(() => {
+                window.open(urlWhatsApp, '_blank');
+            }, 600);
+        });
+    </script>
+</body>
+</html>
