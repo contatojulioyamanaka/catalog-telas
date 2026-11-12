@@ -1,820 +1,1576 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="scroll-smooth">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedido de Bottons Personalizados - Itapeva SP</title>
-    <!-- Tailwind CSS para um design moderno e responsivo -->
+    <title>SeriCatalog - Gestão de Telas de Serigrafia</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonte Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Ícones Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        wood: {
+                            50: '#fbf8f3',
+                            100: '#f5efe4',
+                            200: '#e9dcc5',
+                            600: '#9a6b3b',
+                            700: '#7c532c',
+                            800: '#654426',
+                        }
+                    }
+                }
+            }
         }
     </script>
-    <!-- Cropper.js para o recorte circular da imagem -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
-    <style>
-        .cropper-view-box, .cropper-face {
-            border-radius: 50%;
-        }
-        input[type="file"]::file-selector-button {
-            background-color: #4f46e5;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 9999px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        input[type="file"]::file-selector-button:hover {
-            background-color: #4338ca;
-        }
-        .progress-bar-fill {
-            transition: width 0.3s ease-in-out;
-        }
-    </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen py-8 px-4 pb-28 transition-colors duration-200">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
 
-    <div class="max-w-md mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 transition-colors duration-200">
-        <!-- Cabeçalho com botão de Alternar Modo Escuro -->
-        <div class="bg-indigo-600 dark:bg-indigo-700 text-white p-6 text-center relative">
-            <button type="button" id="toggleDarkModeBtn" onclick="toggleDarkMode()" 
-                class="absolute top-4 right-4 bg-indigo-700 dark:bg-indigo-800 hover:bg-indigo-800 dark:hover:bg-indigo-900 text-xs px-2.5 py-1.5 rounded-full transition flex items-center space-x-1"
-                title="Alternar Modo Escuro">
-                <span id="darkModeIcon">🌙</span>
+    <!-- Notificação Toast Flutuante -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Cabeçalho Principal -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <!-- Logo e Título -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-amber-600 text-white p-2.5 rounded-xl shadow-sm">
+                            <i data-lucide="layers" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-slate-900 leading-tight">SeriCatalog</h1>
+                            <p class="text-xs text-slate-500">Controle de Matrizes de Madeira</p>
+                        </div>
+                    </div>
+                    <!-- Botão Mobile de Nova Tela -->
+                    <button onclick="openScreenModal()" class="md:hidden bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-sm font-medium flex items-center gap-1.5 shadow-sm transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Nova Tela
+                    </button>
+                </div>
+
+                <!-- Ações Globais -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="openSpacesModal()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
+                        <i data-lucide="warehouse" class="w-4 h-4 text-amber-600"></i>
+                        <span>Quartos & Prateleiras</span>
+                    </button>
+
+                    <button onclick="exportToExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition" title="Exportar planilha compatível com Excel">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                        <span>Excel (.CSV)</span>
+                    </button>
+
+                    <div class="relative inline-block">
+                        <button onclick="toggleBackupMenu()" id="backup-menu-btn" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
+                            <i data-lucide="database-backup" class="w-4 h-4 text-slate-600"></i>
+                            <span>Backup</span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <!-- Dropdown Backup -->
+                        <div id="backup-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-40">
+                            <button onclick="exportBackupJSON()" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                                <i data-lucide="download" class="w-4 h-4 text-indigo-600"></i>
+                                <div>
+                                    <div class="font-medium">Salvar Backup (.JSON)</div>
+                                    <div class="text-xs text-slate-400">Baixar cópia de segurança</div>
+                                </div>
+                            </button>
+                            <label class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer border-t border-slate-100">
+                                <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i>
+                                <div>
+                                    <div class="font-medium">Carregar Backup (.JSON)</div>
+                                    <div class="text-xs text-slate-400">Restaurar catálogo salvo</div>
+                                </div>
+                                <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importBackupJSON(event)">
+                            </label>
+                        </div>
+                    </div>
+
+                    <button onclick="openScreenModal()" class="hidden md:flex bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium items-center gap-1.5 shadow-sm transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Cadastrar Tela</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Banner de Dados de Exemplo (visível apenas enquanto dados iniciais estiverem ativos) -->
+        <div id="demo-banner" class="hidden bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-start sm:items-center gap-3">
+                <i data-lucide="info" class="w-5 h-5 text-indigo-600 shrink-0 mt-0.5 sm:mt-0"></i>
+                <p class="text-sm text-indigo-900">
+                    <strong>Modo Demonstração:</strong> Carregamos algumas telas de exemplo para você explorar o sistema. Quando quiser começar seu catálogo real, limpe os exemplos.
+                </p>
+            </div>
+            <button onclick="openConfirmModal('Limpar Dados de Exemplo', 'Deseja apagar todos os dados de exemplo para começar seu catálogo do zero? Os quartos padrão serão mantidos.', clearDemoData)" class="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition">
+                Limpar Exemplos
             </button>
-            <h1 class="text-2xl font-bold">🔘 Faça seu pedido! 😉</h1>
-            <p class="text-indigo-100 text-sm mt-1">Personalize o seu e faça o pedido direto pelo WhatsApp!</p>
         </div>
 
-        <!-- Formulário -->
-        <form id="orderForm" class="p-6 space-y-5">
-            
-            <!-- 1. Nome -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">1. Seu Nome:</label>
-                <input type="text" id="nome" required 
-                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:bg-slate-700 dark:text-white"
-                    placeholder="Digite seu nome completo">
-            </div>
+        <!-- Cards de Resumo (Dashboard) -->
+        <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4" id="dashboard-cards">
+            <!-- Preenchido via JS -->
+        </section>
 
-            <!-- 2. Telefone com Máscara Automática -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">2. Número de Telefone (WhatsApp):</label>
-                <input type="tel" id="telefone" required maxlength="15"
-                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:bg-slate-700 dark:text-white"
-                    placeholder="(15) 99999-9999">
-            </div>
-
-            <!-- 3 e 4. Escolha de Quantidades por Tamanho e Tabela de Preços Progressiva -->
-            <div class="space-y-4">
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">3. Escolha a Quantidade por Tamanho:</label>
-                
-                <!-- Controle 37mm -->
-                <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
-                    <div>
-                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Botton 37mm (Pequeno)</p>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Progressivo de R$ 4,00 a R$ 1,60/un</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button type="button" onclick="alterarQtd('37mm', -1)" class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900 transition">-</button>
-                        <span id="qtd37" class="w-8 text-center font-bold text-slate-800 dark:text-slate-200">0</span>
-                        <button type="button" onclick="alterarQtd('37mm', 1)" class="w-8 h-8 bg-indigo-600 dark:bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition">+</button>
-                    </div>
+        <!-- Barra de Configuração de Reutilização & Navegação Rápida de Quartos -->
+        <section class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <!-- Abas de Quartos -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0" id="room-tabs">
+                    <!-- Preenchido via JS -->
                 </div>
 
-                <!-- Controle 58mm -->
-                <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
-                    <div>
-                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Botton 58mm (Grande)</p>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Progressivo de R$ 8,00 a R$ 3,20/un</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button type="button" onclick="alterarQtd('58mm', -1)" class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900 transition">-</button>
-                        <span id="qtd58" class="w-8 text-center font-bold text-slate-800 dark:text-slate-200">0</span>
-                        <button type="button" onclick="alterarQtd('58mm', 1)" class="w-8 h-8 bg-indigo-600 dark:bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition">+</button>
-                    </div>
+                <!-- Regra de Tempo de Inatividade -->
+                <div class="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl shrink-0">
+                    <i data-lucide="clock-alert" class="w-4 h-4 text-amber-600"></i>
+                    <label for="inactivity-months" class="text-xs font-medium text-amber-900">Sugerir desfazer após:</label>
+                    <select id="inactivity-months" onchange="updateInactivitySetting(this.value)" class="bg-white border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <option value="2">2 meses</option>
+                        <option value="3">3 meses</option>
+                        <option value="6" selected>6 meses</option>
+                        <option value="9">9 meses</option>
+                        <option value="12">12 meses</option>
+                        <option value="18">18 meses</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Filtros e Busca -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                <!-- Busca textual -->
+                <div class="lg:col-span-4 relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="filter-search" oninput="renderScreens()" placeholder="Buscar código, empresa, escola ou arte..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
                 </div>
 
-                <!-- Tabela de Preços Progressiva Informativa com Barra de Progresso de Frete -->
-                <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 p-3 rounded-lg text-xs text-indigo-900 dark:text-indigo-200 space-y-2">
-                    <p class="font-semibold text-indigo-950 dark:text-indigo-100 mb-1">📋 Tabela de Preços Progressiva:</p>
-                    <div class="grid grid-cols-3 gap-1 font-medium border-b border-indigo-200 dark:border-indigo-800 pb-1 text-[11px] text-indigo-900 dark:text-indigo-300">
-                        <span>Qtd</span>
-                        <span>37mm (Peq.)</span>
-                        <span>58mm (Gran.)</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
-                        <span>1 a 9 un.</span>
-                        <span>R$ 4,00 /un</span>
-                        <span>R$ 8,00 /un</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
-                        <span>10 a 29 un.</span>
-                        <span>R$ 3,10 /un</span>
-                        <span>R$ 6,20 /un</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
-                        <span>30 a 49 un.</span>
-                        <span>R$ 2,50 /un</span>
-                        <span>R$ 5,00 /un</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
-                        <span>50 a 99 un.</span>
-                        <span>R$ 1,95 /un</span>
-                        <span>R$ 3,90 /un</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-1 text-[11px] text-slate-700 dark:text-slate-300">
-                        <span>100+ un.</span>
-                        <span>R$ 1,60 /un</span>
-                        <span>R$ 3,20 /un</span>
-                    </div>
+                <!-- Filtro Prateleira (dinâmico conforme quarto) -->
+                <div class="lg:col-span-2">
+                    <select id="filter-shelf" onchange="renderScreens()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="ALL">Todas Prateleiras</option>
+                    </select>
+                </div>
 
-                    <!-- Barra de Progresso Visual de Frete Grátis -->
-                    <div id="containerStatusFrete" class="pt-2 border-t border-indigo-200 dark:border-indigo-800/60 mt-2 space-y-1.5 hidden">
-                        <div class="flex justify-between items-center text-[11px]">
-                            <span id="statusFreteGratis" class="font-bold text-emerald-700 dark:text-emerald-400"></span>
+                <!-- Filtro Categoria -->
+                <div class="lg:col-span-2">
+                    <select id="filter-category" onchange="renderScreens()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="ALL">Todas Categorias</option>
+                        <option value="Empresa">Empresas</option>
+                        <option value="Escola">Escolas</option>
+                    </select>
+                </div>
+
+                <!-- Filtro Tamanho -->
+                <div class="lg:col-span-2">
+                    <select id="filter-size" onchange="renderScreens()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="ALL">Todos Tamanhos</option>
+                        <option value="Grande">Telas Grandes</option>
+                        <option value="Pequena">Telas Pequenas</option>
+                    </select>
+                </div>
+
+                <!-- Filtro Status -->
+                <div class="lg:col-span-2">
+                    <select id="filter-status" onchange="renderScreens()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="ALL">Todos Status</option>
+                        <option value="ACTIVE">Ativas (Em uso)</option>
+                        <option value="INACTIVE">Candidatas a Desfazer</option>
+                        <option value="AVAILABLE">Disponíveis (Limpas)</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Grid de Telas Catalogadas -->
+        <section>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-base font-semibold text-slate-800" id="results-count">Carregando telas...</h2>
+                <button onclick="resetFilters()" id="reset-filters-btn" class="hidden text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Limpar filtros
+                </button>
+            </div>
+
+            <div id="screens-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <!-- Cards das telas inseridos via JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL: Cadastrar / Editar Tela -->
+    <div id="screen-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-xl border border-slate-200 my-8 overflow-hidden animate-fade-in">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="bg-amber-100 text-amber-700 p-2 rounded-lg">
+                        <i data-lucide="frame" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900" id="screen-modal-title">Cadastrar Nova Tela</h3>
+                </div>
+                <button onclick="closeScreenModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/50 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="screen-form" onsubmit="saveScreen(event)" class="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                <input type="hidden" id="screen-id">
+
+                <!-- Dados Físicos da Tela -->
+                <div class="bg-wood-50 border border-wood-200 rounded-xl p-4 space-y-4">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-wood-800 flex items-center gap-1.5">
+                        <i data-lucide="ruler" class="w-4 h-4"></i> Estrutura Física da Matriz (Madeira)
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Código / Identificação *</label>
+                            <input type="text" id="screen-code" required placeholder="Ex: T-01, M-12" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
-                        <div class="w-full bg-indigo-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
-                            <div id="barraProgressoFrete" class="bg-emerald-600 dark:bg-emerald-500 h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tamanho da Tela *</label>
+                            <select id="screen-size" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="Grande">Grande</option>
+                                <option value="Pequena">Pequena</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Medidas (Opcional)</label>
+                            <input type="text" id="screen-dimensions" placeholder="Ex: 50x70 cm" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
                     </div>
 
-                    <div id="freteInfoContainer" class="hidden text-amber-800 dark:text-amber-300 pt-1 border-t border-indigo-200 dark:border-indigo-800/60 space-y-0.5">
-                        <p id="freteTextoValor">• **Taxa de Entrega:** R$ 8,00</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Quarto / Sala *</label>
+                            <select id="screen-room" required onchange="populateModalShelves()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <!-- Dinâmico -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Prateleira / Nicho *</label>
+                            <select id="screen-shelf" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <!-- Dinâmico -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status da Gravação -->
+                <div class="flex items-center justify-between bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <div>
+                        <div class="text-sm font-semibold text-slate-800">Tela Limpa / Disponível para uso?</div>
+                        <div class="text-xs text-slate-500">Marque se a tela está sem nenhuma arte gravada no momento</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="screen-is-clean" onchange="toggleArtsSection()" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
+                <!-- Bloco de Artes Gravadas -->
+                <div id="arts-container" class="space-y-4">
+                    <!-- ARTE 1 -->
+                    <div class="border border-slate-200 rounded-xl p-4 space-y-3 bg-white">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg">Arte Principal (Lado 1)</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Categoria *</label>
+                                <select id="art1-category" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="Empresa">Empresa</option>
+                                    <option value="Escola">Escola</option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nome da Empresa ou Escola *</label>
+                                <input type="text" id="art1-client" placeholder="Ex: Construtora Silva / Colégio Objetivo" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição da Arte *</label>
+                                <input type="text" id="art1-desc" placeholder="Ex: Logo Peito Esquerdo, Costas Uniforme" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Último Pedido *</label>
+                                <input type="date" id="art1-date" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
                     </div>
 
-                    <p id="valorTotalPrev" class="font-bold text-indigo-700 dark:text-indigo-300 pt-2 border-t border-indigo-200 dark:border-indigo-800/60 mt-2 text-sm">
-                        👉 Adicione bottons usando os botões acima para ver o total estimado.
-                    </p>
-                </div>
-            </div>
-
-            <!-- 5. Forma de Pagamento -->
-            <div class="space-y-3 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">5. Forma de Pagamento:</label>
-                <div class="flex space-x-6">
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input type="radio" name="pagamento" value="Pix" required class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
-                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Pix</span>
-                    </label>
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input type="radio" name="pagamento" value="Dinheiro" required class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
-                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Dinheiro</span>
-                    </label>
-                </div>
-
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 italic">💡 Se escolher pagamento via Pix, a chave e os dados serão enviados via WhatsApp, após a conclusão do pedido.</p>
-
-                <!-- Pergunta condicional de troco via Pix (aparece só se escolher Dinheiro) -->
-                <div id="trocoContainer" class="hidden pt-3 border-t border-slate-200 dark:border-slate-600 space-y-2">
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Precisa de troco para quanto? (Ou troco em dinheiro)</label>
-                    <input type="text" id="trocoValor" 
-                        class="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:bg-slate-700 dark:text-white"
-                        placeholder="Ex: Para R$ 50,00">
-                    
-                    <div class="flex items-start space-x-2 pt-1">
-                        <input type="checkbox" id="aceitaTrocoPix" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mt-0.5">
-                        <label for="aceitaTrocoPix" class="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                            Aceita receber o troco via Pix?
+                    <!-- Toggle Arte 2 -->
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="has-art2" onchange="toggleArt2Fields()" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                        <label for="has-art2" class="text-sm font-medium text-slate-700 cursor-pointer select-none">
+                            Esta tela possui uma <strong>segunda arte</strong> gravada (compartilhada com outra empresa/escola)
                         </label>
                     </div>
-                </div>
-            </div>
 
-            <!-- 6. Retirada no Endereço do Vendedor ou Entrega -->
-            <div class="space-y-3 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600">
-                <div class="flex items-start space-x-3">
-                    <input type="checkbox" id="retiradaLoja" class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 mt-0.5">
-                    <label for="retiradaLoja" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                        Retirar o pedido no endereço do vendedor<br>
-                        <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">Rua Clovis Mendes Garcia, Centro, 31 (CEP: 18400-085)</span>
-                    </label>
+                    <!-- ARTE 2 (Opcional) -->
+                    <div id="art2-fields" class="hidden border border-purple-200 rounded-xl p-4 space-y-3 bg-purple-50/30">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-purple-700 bg-purple-100 px-2.5 py-1 rounded-lg">Segunda Arte (Compartilhada)</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Categoria *</label>
+                                <select id="art2-category" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="Empresa">Empresa</option>
+                                    <option value="Escola">Escola</option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nome da Empresa ou Escola *</label>
+                                <input type="text" id="art2-client" placeholder="Ex: Oficina Mecânica Central" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição da Arte *</label>
+                                <input type="text" id="art2-desc" placeholder="Ex: Manga Direita / Telefone" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Último Pedido *</label>
+                                <input type="date" id="art2-date" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- 7. Endereço de Entrega Detalhado com Consulta de CEP -->
-            <div id="enderecoContainer" class="space-y-3">
+                <!-- Observações Gerais -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">7. CEP de Entrega (Itapeva - SP):</label>
-                    <input type="text" id="cep" maxlength="9" 
-                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono dark:bg-slate-700 dark:text-white"
-                        placeholder="18400-000">
-                    <p id="cepFeedback" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Digite o CEP para buscar o endereço automaticamente.</p>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Observações (Fio do poliéster, estado da madeira, etc.)</label>
+                    <input type="text" id="screen-notes" placeholder="Ex: Tela 55 fios, madeira reforçada..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
 
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Rua:</label>
-                        <input type="text" id="rua" required
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-slate-100 dark:bg-slate-700 dark:text-slate-200"
-                            placeholder="Preenchimento automático" readonly>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Número:</label>
-                        <input type="text" id="numero" required
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm transition-all dark:bg-slate-700 dark:text-white"
-                            placeholder="Ex: 123">
-                    </div>
+                <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
+                    <button type="button" onclick="closeScreenModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition">Salvar Tela</button>
                 </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bairro:</label>
-                        <input type="text" id="bairro" required
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-slate-100 dark:bg-slate-700 dark:text-slate-200"
-                            placeholder="Preenchimento automático" readonly>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Apto / Bloco (Opcional):</label>
-                        <input type="text" id="complemento" 
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm dark:bg-slate-700 dark:text-white"
-                            placeholder="Ex: Apto 42B">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ponto de Referência:</label>
-                    <input type="text" id="referencia" 
-                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm dark:bg-slate-700 dark:text-white"
-                        placeholder="Ex: Próximo à praça, casa com portão branco">
-                </div>
-
-                <!-- Entregar para o vizinho -->
-                <div class="flex items-start space-x-3 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200 dark:border-slate-600 mt-2">
-                    <input type="checkbox" id="entregaVizinho" class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 mt-0.5">
-                    <label for="entregaVizinho" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                        Caso eu não esteja em casa, autorizo a entrega para um vizinho.
-                    </label>
-                </div>
-            </div>
-
-            <!-- 8. Termo de Ciência de Venda Exclusiva em Itapeva SP -->
-            <div class="flex items-start space-x-3 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg border border-amber-200 dark:border-amber-900/50">
-                <input type="checkbox" id="cienciaItapeva" required class="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 mt-0.5">
-                <label for="cienciaItapeva" class="text-xs font-medium text-amber-900 dark:text-amber-200 cursor-pointer">
-                    Estou ciente de que o comércio opera exclusivamente em Itapeva - SP.
-                </label>
-            </div>
-
-            <!-- 9. Envio e Simulação da Arte no Botton (Opcional) -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">9. Simulação da Arte no Botton (Opcional):</label>
-                <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 p-3 rounded-lg text-xs text-indigo-950 dark:text-indigo-200 space-y-1.5 mb-2">
-                    <p>🎨 <strong>Quer ver como sua arte vai ficar?</strong> Este recurso abaixo é apenas um simulador visual para você testar e ajustar o corte da sua imagem dentro do formato redondo de um botton!</p>
-                    <p>📸 <em>Diferentes imagens:</em> Pode enviar imagens diferentes! Se preferir, você também pode enviar as artes distintas diretamente na conversa do WhatsApp após enviar o pedido.</p>
-                    <p>💡 <em>Dica de Qualidade:</em> O ideal é enviar imagens acima de <strong>1000x1000 pixels</strong>.</p>
-                </div>
-                
-                <input type="file" id="uploadImage" accept="image/png, image/jpeg, image/jpg, image/webp"
-                    class="w-full text-sm text-slate-500 dark:text-slate-400 cursor-pointer">
-            </div>
-
-            <!-- Área de Ajuste/Crop (Oculta até carregar a imagem) -->
-            <div id="cropAreaContainer" class="hidden space-y-3 border border-indigo-200 dark:border-indigo-800 p-4 rounded-xl bg-indigo-50/50 dark:bg-slate-700/50">
-                <div class="max-h-64 overflow-hidden flex justify-center">
-                    <img id="imageToCrop" class="max-w-full">
-                </div>
-                <button type="button" id="cropBtn" 
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition text-sm">
-                    ✂️ Confirmar Recorte Circular
-                </button>
-            </div>
-
-            <!-- Pré-visualização da imagem recortada -->
-            <div id="previewContainer" class="hidden text-center space-y-2">
-                <p class="text-xs font-medium text-slate-600 dark:text-slate-400">Simulação da Arte Pronta:</p>
-                <img id="croppedResult" class="w-24 h-24 object-cover rounded-full mx-auto border-2 border-indigo-500 shadow-md">
-                <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Visualização gerada com sucesso!</p>
-            </div>
-
-            <!-- Seção de FAQ (Perguntas Frequentes) -->
-            <div class="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
-                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">❓ Dúvidas Frequentes (FAQ)</h3>
-                
-                <div class="bg-slate-50 dark:bg-slate-700/40 p-3 rounded-lg border border-slate-200 dark:border-slate-600 text-xs space-y-1">
-                    <p class="font-semibold text-indigo-900 dark:text-indigo-300">⏱️ Qual é o prazo de produção?</p>
-                    <p class="text-slate-600 dark:text-slate-300">O prazo de produção e preparo do pedido leva de <strong>3 a 7 dias úteis</strong> após a confirmação do pagamento e aprovação das artes.</p>
-                </div>
-
-                <div class="bg-slate-50 dark:bg-slate-700/40 p-3 rounded-lg border border-slate-200 dark:border-slate-600 text-xs space-y-1">
-                    <p class="font-semibold text-indigo-900 dark:text-indigo-300">🖼️ Posso pedir bottons com imagens diferentes?</p>
-                    <p class="text-slate-600 dark:text-slate-300">Sim! Se você pedir vários bottons, pode enviar imagens e artes diferentes diretamente no nosso chat do WhatsApp logo após finalizar o pedido.</p>
-                </div>
-
-                <div class="bg-slate-50 dark:bg-slate-700/40 p-3 rounded-lg border border-slate-200 dark:border-slate-600 text-xs space-y-1">
-                    <p class="font-semibold text-indigo-900 dark:text-indigo-300">📍 Onde é feita a retirada?</p>
-                    <p class="text-slate-600 dark:text-slate-300">Para quem opta pela retirada, estamos localizados na Rua Clovis Mendes Garcia, Centro, 31 (Itapeva - SP).</p>
-                </div>
-            </div>
-
-            <!-- Botão de Envio e Botão de Cópia (Fallback) -->
-            <div class="space-y-2 pt-2">
-                <button type="submit" 
-                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg flex items-center justify-center space-x-2">
-                    <span>📲 Enviar Pedido para o WhatsApp</span>
-                </button>
-                <button type="button" id="btnCopiarTexto" onclick="copiarTextoPedido()"
-                    class="w-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2 rounded-xl transition text-xs flex items-center justify-center space-x-1">
-                    <span>📋 Copiar texto do pedido (Caso o WhatsApp não abra)</span>
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Barra Flutuante de Resumo (Carrinho) -->
-    <div id="barraFlutuante" class="fixed bottom-0 left-0 right-0 bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur text-white p-3 shadow-2xl border-t border-slate-800 transition-transform duration-300 transform translate-y-full z-40">
-        <div class="max-w-md mx-auto flex items-center justify-between text-xs sm:text-sm">
-            <div>
-                <p id="resumoPecas" class="font-bold text-indigo-300">0 bottons</p>
-                <p id="resumoValorTotal" class="font-extrabold text-emerald-400 text-base">R$ 0,00</p>
-            </div>
-            <button type="button" onclick="document.getElementById('orderForm').requestSubmit()" 
-                class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-lg shadow transition text-xs sm:text-sm flex items-center space-x-1">
-                <span>Finalizar Pedido 📲</span>
-            </button>
+            </form>
         </div>
     </div>
 
-    <!-- Modal de Confirmação Visutal Pós-Envio -->
-    <div id="modalRedirecionamento" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-100 dark:border-slate-700 animate-bounce-short">
-            <div class="text-4xl">📲</div>
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Redirecionando para o WhatsApp...</h3>
-            <p class="text-xs text-slate-600 dark:text-slate-300">
-                O seu resumo de pedido foi gerado! <strong>Lembre-se de enviar a mensagem e anexar as fotos/artes</strong> na conversa com o vendedor.
-            </p>
-            <div class="pt-2">
-                <button type="button" onclick="fecharModalRedirecionamento()" 
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl text-xs transition">
-                    Entendido!
+    <!-- MODAL: Gerenciar Quartos e Prateleiras -->
+    <div id="spaces-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-xl border border-slate-200 my-8 overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="bg-amber-100 text-amber-700 p-2 rounded-lg">
+                        <i data-lucide="warehouse" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Quartos e Prateleiras</h3>
+                        <p class="text-xs text-slate-500">Configure os espaços físicos da sua serigrafia</p>
+                    </div>
+                </div>
+                <button onclick="closeSpacesModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/50 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
+            </div>
+
+            <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+                <!-- Adicionar Novo Quarto -->
+                <form onsubmit="addRoom(event)" class="flex gap-2">
+                    <input type="text" id="new-room-name" required placeholder="Nome do novo quarto/sala (Ex: Sala Fundo, Depósito 2)" class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-1.5 shrink-0 transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Adicionar Quarto
+                    </button>
+                </form>
+
+                <!-- Lista de Quartos e suas Prateleiras -->
+                <div id="rooms-management-list" class="space-y-4">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button onclick="closeSpacesModal()" class="px-5 py-2 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-900 text-white transition">Concluir</button>
             </div>
         </div>
     </div>
 
-    <!-- Scripts do Cropper.js e Lógica do Sistema -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <!-- MODAL: Confirmação Customizada (Substitui alert/confirm) -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="bg-amber-100 text-amber-600 p-2.5 rounded-xl shrink-0">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900" id="confirm-title">Confirmar Ação</h3>
+                    <p class="text-sm text-slate-600 mt-1" id="confirm-message">Tem certeza que deseja prosseguir?</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2.5 pt-2">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">Cancelar</button>
+                <button id="confirm-action-btn" class="px-4 py-2 rounded-xl text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const WHATSAPP_NUMERO_LOJA = "5515997259823";
-        const LOJA_CEP = "18400085";
+        // ==========================================
+        // ESTADO DA APLICAÇÃO & PERSISTÊNCIA
+        // ==========================================
+        const STORAGE_KEY = 'sericatalog_db_v1';
 
-        let qtd37 = 0;
-        let qtd58 = 0;
+        let appState = {
+            inactivityMonths: 6,
+            isDemoData: false,
+            rooms: [],
+            screens: []
+        };
 
-        // Gerenciamento do Modo Escuro (Dark Mode)
-        function initDarkMode() {
-            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                document.getElementById('darkModeIcon').textContent = '☀️';
+        let activeRoomFilter = 'ALL';
+        let confirmCallback = null;
+
+        // Gera IDs únicos simples
+        function generateId(prefix = 'id') {
+            return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        }
+
+        // Retorna data YYYY-MM-DD subtraindo N dias de hoje
+        function getDateDaysAgo(days) {
+            const d = new Date();
+            d.setDate(d.getDate() - days);
+            return d.toISOString().split('T')[0];
+        }
+
+        function getTodayISO() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // Carrega dados do localStorage ou inicializa com exemplos realistas
+        function initApp() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appState = {
+                        inactivityMonths: parsed.inactivityMonths || 6,
+                        isDemoData: Boolean(parsed.isDemoData),
+                        rooms: Array.isArray(parsed.rooms) && parsed.rooms.length ? parsed.rooms : getDefaultRooms(),
+                        screens: Array.isArray(parsed.screens) ? parsed.screens : []
+                    };
+                } catch (e) {
+                    console.error("Erro ao ler localStorage:", e);
+                    loadDemoData();
+                }
             } else {
-                document.documentElement.classList.remove('dark');
-                document.getElementById('darkModeIcon').textContent = '🌙';
+                loadDemoData();
             }
+
+            document.getElementById('inactivity-months').value = appState.inactivityMonths;
+            updateDemoBanner();
+            refreshUI();
         }
 
-        function toggleDarkMode() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-                document.getElementById('darkModeIcon').textContent = '🌙';
+        function getDefaultRooms() {
+            return [
+                { id: 'room_1', name: 'Quarto Principal', shelves: ['Prateleira A1', 'Prateleira A2', 'Prateleira B1'] },
+                { id: 'room_2', name: 'Sala Escolas', shelves: ['Estante 1 - Superior', 'Estante 1 - Inferior'] },
+                { id: 'room_3', name: 'Depósito Fundos', shelves: ['Prateleira Reserva'] }
+            ];
+        }
+
+        function loadDemoData() {
+            appState = {
+                inactivityMonths: 6,
+                isDemoData: true,
+                rooms: getDefaultRooms(),
+                screens: [
+                    {
+                        id: 'scr_1',
+                        code: 'T-01',
+                        size: 'Grande',
+                        dimensions: '50x70 cm',
+                        roomId: 'room_1',
+                        shelf: 'Prateleira A1',
+                        isClean: false,
+                        notes: 'Tela 55 fios, madeira em ótimo estado',
+                        arts: [
+                            { category: 'Empresa', client: 'Metalúrgica Forte', desc: 'Logo Costas Completo', lastOrderDate: getDateDaysAgo(18) }
+                        ]
+                    },
+                    {
+                        id: 'scr_2',
+                        code: 'T-02',
+                        size: 'Pequena',
+                        dimensions: '35x45 cm',
+                        roomId: 'room_1',
+                        shelf: 'Prateleira A2',
+                        isClean: false,
+                        notes: 'Tela compartilhada (2 logos peito)',
+                        arts: [
+                            { category: 'Empresa', client: 'Padaria Pão Quente', desc: 'Logo Peito Esquerdo', lastOrderDate: getDateDaysAgo(42) },
+                            { category: 'Empresa', client: 'Auto Elétrica Souza', desc: 'Brasão Bolso', lastOrderDate: getDateDaysAgo(12) }
+                        ]
+                    },
+                    {
+                        id: 'scr_3',
+                        code: 'E-10',
+                        size: 'Grande',
+                        dimensions: '50x70 cm',
+                        roomId: 'room_2',
+                        shelf: 'Estante 1 - Superior',
+                        isClean: false,
+                        notes: 'Uniforme escolar anual',
+                        arts: [
+                            { category: 'Escola', client: 'Colégio Estadual Machado de Assis', desc: 'Brasão Frontal + Mangas', lastOrderDate: getDateDaysAgo(75) }
+                        ]
+                    },
+                    {
+                        id: 'scr_4',
+                        code: 'T-14',
+                        size: 'Grande',
+                        dimensions: '50x70 cm',
+                        roomId: 'room_1',
+                        shelf: 'Prateleira B1',
+                        isClean: false,
+                        notes: 'Cliente fechou filial - avaliar recuperação',
+                        arts: [
+                            { category: 'Empresa', client: 'Transportadora Rápido Sul', desc: 'Estampa Costas 2 Cores', lastOrderDate: getDateDaysAgo(245) }
+                        ]
+                    },
+                    {
+                        id: 'scr_5',
+                        code: 'T-19',
+                        size: 'Pequena',
+                        dimensions: '35x45 cm',
+                        roomId: 'room_3',
+                        shelf: 'Prateleira Reserva',
+                        isClean: false,
+                        notes: 'Ambas as empresas sem pedido há mais de 7 meses',
+                        arts: [
+                            { category: 'Empresa', client: 'Mercadinho Bom Preço', desc: 'Logo Avental', lastOrderDate: getDateDaysAgo(220) },
+                            { category: 'Escola', client: 'Escolinha Primeiros Passos', desc: 'Nome Turma 2025', lastOrderDate: getDateDaysAgo(260) }
+                        ]
+                    },
+                    {
+                        id: 'scr_6',
+                        code: 'T-25',
+                        size: 'Grande',
+                        dimensions: '50x70 cm',
+                        roomId: 'room_3',
+                        shelf: 'Prateleira Reserva',
+                        isClean: true,
+                        notes: 'Emulsão removida e desengraxada, pronta para gravar',
+                        arts: []
+                    }
+                ]
+            };
+            saveToStorage();
+        }
+
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        }
+
+        function clearDemoData() {
+            appState.screens = [];
+            appState.isDemoData = false;
+            saveToStorage();
+            updateDemoBanner();
+            refreshUI();
+            showToast('Dados de exemplo removidos! Seu catálogo está pronto para uso.', 'success');
+        }
+
+        function updateDemoBanner() {
+            const banner = document.getElementById('demo-banner');
+            if (appState.isDemoData && appState.screens.length > 0) {
+                banner.classList.remove('hidden');
             } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-                document.getElementById('darkModeIcon').textContent = '☀️';
+                banner.classList.add('hidden');
             }
         }
 
-        // Carregar preferências e dados ao carregar a página
-        window.addEventListener('DOMContentLoaded', () => {
-            initDarkMode();
-
-            if (localStorage.getItem('cliente_nome')) {
-                document.getElementById('nome').value = localStorage.getItem('cliente_nome');
-            }
-            if (localStorage.getItem('cliente_tel')) {
-                document.getElementById('telefone').value = localStorage.getItem('cliente_tel');
-            }
-        });
-
-        function alterarQtd(tamanho, delta) {
-            if (tamanho === '37mm') {
-                qtd37 = Math.max(0, qtd37 + delta);
-                document.getElementById('qtd37').textContent = qtd37;
-            } else if (tamanho === '58mm') {
-                qtd58 = Math.max(0, qtd58 + delta);
-                document.getElementById('qtd58').textContent = qtd58;
-            }
-            atualizarPreco();
+        // ==========================================
+        // CÁLCULOS DE INATIVIDADE E STATUS
+        // ==========================================
+        function getDaysSince(dateString) {
+            if (!dateString) return 0;
+            const past = new Date(dateString + 'T00:00:00');
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const diffTime = now - past;
+            return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
         }
 
-        // Máscara automática para o telefone
-        const telefoneInput = document.getElementById('telefone');
-        telefoneInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 11) value = value.slice(0, 11);
-            
-            if (value.length > 7) {
-                value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
-            } else if (value.length > 2) {
-                value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
-            } else if (value.length > 0) {
-                value = `(${value}`;
-            }
-            e.target.value = value;
-        });
-
-        // Máscara e consulta automática de CEP
-        const cepInput = document.getElementById('cep');
-        const cepFeedback = document.getElementById('cepFeedback');
-        const ruaInput = document.getElementById('rua');
-        const bairroInput = document.getElementById('bairro');
-        const numeroInput = document.getElementById('numero');
-
-        cepInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 8) value = value.slice(0, 8);
-            if (value.length > 5) {
-                value = `${value.slice(0, 5)}-${value.slice(5)}`;
-            }
-            e.target.value = value;
-
-            if (value.length === 9) {
-                let cepLimpo = value.replace('-', '');
-                cepFeedback.textContent = "Buscando endereço...";
-                cepFeedback.className = "text-[11px] text-indigo-600 dark:text-indigo-400 mt-1";
-
-                fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.erro) {
-                            cepFeedback.textContent = "❌ CEP não encontrado.";
-                            cepFeedback.className = "text-[11px] text-rose-600 dark:text-rose-400 mt-1";
-                            ruaInput.value = "";
-                            bairroInput.value = "";
-                        } else if (data.localidade.toLowerCase() !== 'itapeva' || data.uf !== 'SP') {
-                            cepFeedback.textContent = "❌ Atendimento exclusivo para Itapeva - SP.";
-                            cepFeedback.className = "text-[11px] text-rose-600 dark:text-rose-400 mt-1";
-                            ruaInput.value = "";
-                            bairroInput.value = "";
-                        } else {
-                            cepFeedback.textContent = "✓ Endereço localizado em Itapeva - SP!";
-                            cepFeedback.className = "text-[11px] text-emerald-600 dark:text-emerald-400 mt-1";
-                            ruaInput.value = data.logradouro;
-                            bairroInput.value = data.bairro;
-                            
-                            // Destaque visual no campo Número
-                            numeroInput.classList.add('ring-2', 'ring-indigo-500', 'bg-yellow-50', 'dark:bg-indigo-900/40');
-                            numeroInput.focus();
-                            setTimeout(() => {
-                                numeroInput.classList.remove('bg-yellow-50', 'dark:bg-indigo-900/40');
-                            }, 2000);
-                        }
-                    })
-                    .catch(() => {
-                        cepFeedback.textContent = "❌ Erro ao consultar o CEP.";
-                        cepFeedback.className = "text-[11px] text-rose-600 dark:text-rose-400 mt-1";
-                    });
-            }
-        });
-
-        const retiradaCheckbox = document.getElementById('retiradaLoja');
-        const enderecoContainer = document.getElementById('enderecoContainer');
-        const freteInfoContainer = document.getElementById('freteInfoContainer');
-        const freteTextoValor = document.getElementById('freteTextoValor');
-        const containerStatusFrete = document.getElementById('containerStatusFrete');
-        const statusFreteGratis = document.getElementById('statusFreteGratis');
-        const barraProgressoFrete = document.getElementById('barraProgressoFrete');
-        const barraFlutuante = document.getElementById('barraFlutuante');
-        
-        const complementoInput = document.getElementById('complemento');
-        const referenciaInput = document.getElementById('referencia');
-        const entregaVizinhoCheckbox = document.getElementById('entregaVizinho');
-        
-        const valorTotalPrev = document.getElementById('valorTotalPrev');
-
-        const radiosPagamento = document.getElementsByName('pagamento');
-        const trocoContainer = document.getElementById('trocoContainer');
-        const trocoValorInput = document.getElementById('trocoValor');
-        const aceitaTrocoPixCheckbox = document.getElementById('aceitaTrocoPix');
-
-        const uploadImage = document.getElementById('uploadImage');
-        const imageToCrop = document.getElementById('imageToCrop');
-        const cropAreaContainer = document.getElementById('cropAreaContainer');
-        const cropBtn = document.getElementById('cropBtn');
-        const previewContainer = document.getElementById('previewContainer');
-        const croppedResult = document.getElementById('croppedResult');
-
-        let cropper = null;
-        let croppedBlobUrl = null;
-        let croppedFileBlob = null;
-
-        function getPreco37(qtd) {
-            if (qtd >= 100) return 1.60;
-            if (qtd >= 50) return 1.95;
-            if (qtd >= 30) return 2.50;
-            if (qtd >= 10) return 3.10;
-            return 4.00;
+        function formatRelativeTime(days) {
+            if (days === 0) return 'Hoje';
+            if (days === 1) return 'Ontem';
+            if (days < 30) return `há ${days} dias`;
+            const months = Math.floor(days / 30);
+            if (months === 1) return 'há 1 mês';
+            if (months < 12) return `há ${months} meses`;
+            const years = Math.floor(months / 12);
+            const remMonths = months % 12;
+            return remMonths > 0 ? `há ${years}a e ${remMonths}m` : `há ${years} ano(s)`;
         }
 
-        function getPreco58(qtd) {
-            if (qtd >= 100) return 3.20;
-            if (qtd >= 50) return 3.90;
-            if (qtd >= 30) return 5.00;
-            if (qtd >= 10) return 6.20;
-            return 8.00;
+        function formatDateBR(dateString) {
+            if (!dateString) return '-';
+            const [y, m, d] = dateString.split('-');
+            return `${d}/${m}/${y}`;
         }
 
-        function atualizarPreco() {
-            const totalPecas = qtd37 + qtd58;
+        // Determina status geral da tela: 'AVAILABLE' | 'INACTIVE' | 'ACTIVE'
+        function getScreenStatus(screen) {
+            if (screen.isClean || !screen.arts || screen.arts.length === 0) {
+                return 'AVAILABLE';
+            }
+            const thresholdDays = appState.inactivityMonths * 30;
+            // Uma tela só é candidata a desfazer se TODAS as artes gravadas nela ultrapassaram o limite de inatividade
+            const allArtsInactive = screen.arts.every(art => getDaysSince(art.lastOrderDate) >= thresholdDays);
+            return allArtsInactive ? 'INACTIVE' : 'ACTIVE';
+        }
 
-            if (totalPecas === 0) {
-                containerStatusFrete.classList.add('hidden');
-                freteInfoContainer.classList.add('hidden');
-                valorTotalPrev.textContent = "👉 Adicione bottons usando os botões acima para ver o total estimado.";
-                barraFlutuante.classList.add('translate-y-full');
+        function updateInactivitySetting(months) {
+            appState.inactivityMonths = parseInt(months, 10) || 6;
+            saveToStorage();
+            refreshUI();
+            showToast(`Limite de inatividade atualizado para ${appState.inactivityMonths} meses.`, 'info');
+        }
+
+        // ==========================================
+        // RENDERIZAÇÃO DA INTERFACE
+        // ==========================================
+        function refreshUI() {
+            renderDashboard();
+            renderRoomTabs();
+            updateShelfFilterDropdown();
+            renderScreens();
+            lucide.createIcons();
+        }
+
+        function renderDashboard() {
+            const total = appState.screens.length;
+            let available = 0;
+            let inactive = 0;
+            let companiesCount = 0;
+            let schoolsCount = 0;
+            let largeCount = 0;
+            let smallCount = 0;
+
+            appState.screens.forEach(s => {
+                const status = getScreenStatus(s);
+                if (status === 'AVAILABLE') available++;
+                if (status === 'INACTIVE') inactive++;
+
+                if (s.size === 'Grande') largeCount++;
+                else smallCount++;
+
+                if (!s.isClean && s.arts) {
+                    const hasCompany = s.arts.some(a => a.category === 'Empresa');
+                    const hasSchool = s.arts.some(a => a.category === 'Escola');
+                    if (hasCompany) companiesCount++;
+                    if (hasSchool) schoolsCount++;
+                }
+            });
+
+            const cards = [
+                { label: 'Total de Telas', value: total, sub: `${largeCount} Grandes · ${smallCount} Pequenas`, icon: 'layers', color: 'text-slate-700', bg: 'bg-slate-100', filterAction: () => { resetFilters(); } },
+                { label: 'Disponíveis (Limpas)', value: available, sub: 'Prontas para gravar', icon: 'check-circle-2', color: 'text-emerald-700', bg: 'bg-emerald-100', filterAction: () => { setQuickStatusFilter('AVAILABLE'); } },
+                { label: 'Candidatas a Desfazer', value: inactive, sub: `Sem pedido há +${appState.inactivityMonths}m`, icon: 'alert-circle', color: 'text-amber-700', bg: 'bg-amber-100', highlight: inactive > 0, filterAction: () => { setQuickStatusFilter('INACTIVE'); } },
+                { label: 'Telas de Empresas', value: companiesCount, sub: 'Com artes comerciais', icon: 'building-2', color: 'text-blue-700', bg: 'bg-blue-100', filterAction: () => { setQuickCategoryFilter('Empresa'); } },
+                { label: 'Telas de Escolas', value: schoolsCount, sub: 'Uniformes escolares', icon: 'graduation-cap', color: 'text-purple-700', bg: 'bg-purple-100', filterAction: () => { setQuickCategoryFilter('Escola'); } },
+                { label: 'Grandes / Pequenas', value: `${largeCount} / ${smallCount}`, sub: 'Proporção de tamanhos', icon: 'maximize-2', color: 'text-indigo-700', bg: 'bg-indigo-100', filterAction: () => { resetFilters(); } },
+            ];
+
+            const container = document.getElementById('dashboard-cards');
+            container.innerHTML = cards.map((c, idx) => `
+                <div onclick="dashboardCardClick(${idx})" class="cursor-pointer bg-white rounded-2xl p-3.5 sm:p-4 border ${c.highlight ? 'border-amber-300 ring-2 ring-amber-100' : 'border-slate-200'} shadow-xs hover:shadow-md transition flex flex-col justify-between">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-medium text-slate-500 leading-tight">${c.label}</span>
+                        <div class="${c.bg} ${c.color} p-1.5 rounded-lg shrink-0">
+                            <i data-lucide="${c.icon}" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="text-xl sm:text-2xl font-bold text-slate-900">${c.value}</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5 truncate">${c.sub}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            window._dashboardActions = cards.map(c => c.filterAction);
+        }
+
+        function dashboardCardClick(idx) {
+            if (window._dashboardActions && window._dashboardActions[idx]) {
+                window._dashboardActions[idx]();
+            }
+        }
+
+        function setQuickStatusFilter(status) {
+            resetFilters(false);
+            document.getElementById('filter-status').value = status;
+            renderScreens();
+        }
+
+        function setQuickCategoryFilter(cat) {
+            resetFilters(false);
+            document.getElementById('filter-category').value = cat;
+            renderScreens();
+        }
+
+        function renderRoomTabs() {
+            const container = document.getElementById('room-tabs');
+            const totalScreens = appState.screens.length;
+
+            let html = `
+                <button onclick="selectRoomTab('ALL')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${activeRoomFilter === 'ALL' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                    <span>Todos os Quartos</span>
+                    <span class="px-1.5 py-0.5 text-[11px] rounded-md ${activeRoomFilter === 'ALL' ? 'bg-slate-700 text-slate-200' : 'bg-white text-slate-600'}">${totalScreens}</span>
+                </button>
+            `;
+
+            appState.rooms.forEach(room => {
+                const count = appState.screens.filter(s => s.roomId === room.id).length;
+                const isActive = activeRoomFilter === room.id;
+                html += `
+                    <button onclick="selectRoomTab('${room.id}')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${isActive ? 'bg-amber-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                        <i data-lucide="door-open" class="w-3.5 h-3.5"></i>
+                        <span>${escapeHTML(room.name)}</span>
+                        <span class="px-1.5 py-0.5 text-[11px] rounded-md ${isActive ? 'bg-amber-700 text-amber-100' : 'bg-white text-slate-600'}">${count}</span>
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function selectRoomTab(roomId) {
+            activeRoomFilter = roomId;
+            renderRoomTabs();
+            updateShelfFilterDropdown();
+            renderScreens();
+            lucide.createIcons();
+        }
+
+        function updateShelfFilterDropdown() {
+            const shelfSelect = document.getElementById('filter-shelf');
+            const currentVal = shelfSelect.value;
+            let shelves = new Set();
+
+            if (activeRoomFilter === 'ALL') {
+                appState.rooms.forEach(r => r.shelves.forEach(sh => shelves.add(sh)));
+            } else {
+                const room = appState.rooms.find(r => r.id === activeRoomFilter);
+                if (room) room.shelves.forEach(sh => shelves.add(sh));
+            }
+
+            let options = `<option value="ALL">Todas Prateleiras</option>`;
+            shelves.forEach(sh => {
+                options += `<option value="${escapeHTML(sh)}">${escapeHTML(sh)}</option>`;
+            });
+            shelfSelect.innerHTML = options;
+            if ([...shelves].includes(currentVal)) {
+                shelfSelect.value = currentVal;
+            } else {
+                shelfSelect.value = 'ALL';
+            }
+        }
+
+        function resetFilters(shouldRender = true) {
+            activeRoomFilter = 'ALL';
+            document.getElementById('filter-search').value = '';
+            document.getElementById('filter-shelf').value = 'ALL';
+            document.getElementById('filter-category').value = 'ALL';
+            document.getElementById('filter-size').value = 'ALL';
+            document.getElementById('filter-status').value = 'ALL';
+            if (shouldRender) refreshUI();
+        }
+
+        function renderScreens() {
+            const search = document.getElementById('filter-search').value.trim().toLowerCase();
+            const shelfFilter = document.getElementById('filter-shelf').value;
+            const categoryFilter = document.getElementById('filter-category').value;
+            const sizeFilter = document.getElementById('filter-size').value;
+            const statusFilter = document.getElementById('filter-status').value;
+
+            const hasActiveFilters = activeRoomFilter !== 'ALL' || search !== '' || shelfFilter !== 'ALL' || categoryFilter !== 'ALL' || sizeFilter !== 'ALL' || statusFilter !== 'ALL';
+            document.getElementById('reset-filters-btn').classList.toggle('hidden', !hasActiveFilters);
+
+            const filtered = appState.screens.filter(screen => {
+                // Filtro Quarto
+                if (activeRoomFilter !== 'ALL' && screen.roomId !== activeRoomFilter) return false;
+
+                // Filtro Prateleira
+                if (shelfFilter !== 'ALL' && screen.shelf !== shelfFilter) return false;
+
+                // Filtro Tamanho
+                if (sizeFilter !== 'ALL' && screen.size !== sizeFilter) return false;
+
+                // Filtro Status
+                const status = getScreenStatus(screen);
+                if (statusFilter !== 'ALL' && status !== statusFilter) return false;
+
+                // Filtro Categoria
+                if (categoryFilter !== 'ALL') {
+                    if (screen.isClean || !screen.arts || screen.arts.length === 0) return false;
+                    const matchesCat = screen.arts.some(a => a.category === categoryFilter);
+                    if (!matchesCat) return false;
+                }
+
+                // Busca Textual
+                if (search) {
+                    const roomName = getRoomName(screen.roomId).toLowerCase();
+                    const codeMatch = screen.code.toLowerCase().includes(search);
+                    const notesMatch = (screen.notes || '').toLowerCase().includes(search);
+                    const locMatch = roomName.includes(search) || (screen.shelf || '').toLowerCase().includes(search);
+                    const artMatch = (screen.arts || []).some(a =>
+                        a.client.toLowerCase().includes(search) ||
+                        a.desc.toLowerCase().includes(search)
+                    );
+                    if (!codeMatch && !notesMatch && !locMatch && !artMatch) return false;
+                }
+
+                return true;
+            });
+
+            document.getElementById('results-count').textContent =
+                `Exibindo ${filtered.length} ${filtered.length === 1 ? 'tela' : 'telas'}`;
+
+            const grid = document.getElementById('screens-grid');
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center space-y-3">
+                        <div class="bg-slate-100 text-slate-400 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto">
+                            <i data-lucide="search-x" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-base font-semibold text-slate-800">Nenhuma tela encontrada</h3>
+                        <p class="text-sm text-slate-500 max-w-md mx-auto">Tente ajustar os filtros de busca ou cadastre uma nova matriz de madeira no catálogo.</p>
+                        <div class="pt-2">
+                            <button onclick="openScreenModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium inline-flex items-center gap-1.5 transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Tela
+                            </button>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
                 return;
             }
 
-            barraFlutuante.classList.remove('translate-y-full');
-
-            const precoUnit37 = getPreco37(qtd37);
-            const precoUnit58 = getPreco58(qtd58);
-
-            const subtotal37 = qtd37 * precoUnit37;
-            const subtotal58 = qtd58 * precoUnit58;
-            const subtotal = subtotal37 + subtotal58;
-
-            let frete = 0;
-
-            containerStatusFrete.classList.remove('hidden');
-            
-            let percentualFrete = Math.min(100, (subtotal / 70) * 100);
-            barraProgressoFrete.style.width = percentualFrete + '%';
-
-            if (subtotal > 70.00) {
-                statusFreteGratis.innerHTML = `✨ PARABÉNS! Você ganhou <strong>FRETE GRÁTIS</strong>!`;
-                barraProgressoFrete.className = "bg-emerald-500 h-2.5 rounded-full progress-bar-fill";
-            } else {
-                let falta = (70.01 - subtotal).toFixed(2).replace('.', ',');
-                statusFreteGratis.innerHTML = `✨ Faltam R$ ${falta} para FRETE GRÁTIS`;
-                barraProgressoFrete.className = "bg-indigo-600 dark:bg-indigo-500 h-2.5 rounded-full progress-bar-fill";
-            }
-
-            if (!retiradaCheckbox.checked) {
-                if (subtotal > 70.00) {
-                    frete = 0;
-                    freteInfoContainer.classList.remove('hidden');
-                    freteTextoValor.innerHTML = `• <s>Taxa de Entrega: R$ 8,00</s> <span class="text-emerald-600 dark:text-emerald-400 font-bold">FRETE GRÁTIS!</span>`;
-                } else {
-                    frete = 8.00;
-                    freteInfoContainer.classList.remove('hidden');
-                    freteTextoValor.innerHTML = `• **Taxa de Entrega:** R$ 8,00`;
-                }
-            } else {
-                freteInfoContainer.classList.add('hidden');
-            }
-
-            let total = subtotal + frete;
-
-            let textoTotal = `Total estimado: R$ ${total.toFixed(2).replace('.', ',')} (R$ ${subtotal.toFixed(2).replace('.', ',')} dos bottons`;
-            if (!retiradaCheckbox.checked) {
-                if (frete === 0) {
-                    textoTotal += ` + R$ 0,00 do frete grátis`;
-                } else {
-                    textoTotal += ` + R$ 8,00 do frete`;
-                }
-            } else {
-                textoTotal += ` + R$ 0,00 da retirada`;
-            }
-            textoTotal += `)`;
-
-            valorTotalPrev.textContent = textoTotal;
-
-            document.getElementById('resumoPecas').textContent = `${totalPecas} unidade(s)`;
-            document.getElementById('resumoValorTotal').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            grid.innerHTML = filtered.map(screen => buildScreenCardHTML(screen)).join('');
+            lucide.createIcons();
         }
 
-        retiradaCheckbox.addEventListener('change', atualizarPreco);
+        function getRoomName(roomId) {
+            const room = appState.rooms.find(r => r.id === roomId);
+            return room ? room.name : 'Quarto não definido';
+        }
 
-        radiosPagamento.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.value === 'Dinheiro') {
-                    trocoContainer.classList.remove('hidden');
-                } else {
-                    trocoContainer.classList.add('hidden');
-                    trocoValorInput.value = '';
-                    aceitaTrocoPixCheckbox.checked = false;
-                }
-            });
-        });
+        function buildScreenCardHTML(screen) {
+            const status = getScreenStatus(screen);
+            const roomName = getRoomName(screen.roomId);
+            const thresholdDays = appState.inactivityMonths * 30;
 
-        retiradaCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                enderecoContainer.style.display = 'none';
-                cepInput.required = false;
-                ruaInput.required = false;
-                bairroInput.required = false;
-                numeroInput.required = false;
-                cepInput.value = '';
-                ruaInput.value = '';
-                bairroInput.value = '';
-                numeroInput.value = '';
-                complementoInput.value = '';
-                referenciaInput.value = '';
-                entregaVizinhoCheckbox.checked = false;
+            // Badges de Status
+            let statusBadge = '';
+            let cardBorderClass = 'border-slate-200';
+
+            if (status === 'AVAILABLE') {
+                statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Disponível / Limpa</span>`;
+                cardBorderClass = 'border-emerald-200';
+            } else if (status === 'INACTIVE') {
+                statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-800"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Candidata a Desfazer</span>`;
+                cardBorderClass = 'border-amber-300 ring-1 ring-amber-200';
             } else {
-                enderecoContainer.style.display = 'block';
-                cepInput.required = true;
-                ruaInput.required = true;
-                bairroInput.required = true;
-                numeroInput.required = true;
+                statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700"><i data-lucide="check" class="w-3.5 h-3.5"></i> Ativa</span>`;
             }
-            atualizarPreco();
+
+            // Badge de Tamanho
+            const sizeBadge = screen.size === 'Grande'
+                ? `<span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-800 text-white">Grande</span>`
+                : `<span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-200 text-slate-800">Pequena</span>`;
+
+            // Conteúdo das Artes
+            let artsHTML = '';
+            if (screen.isClean || !screen.arts || screen.arts.length === 0) {
+                artsHTML = `
+                    <div class="bg-emerald-50/60 border border-dashed border-emerald-200 rounded-xl p-4 text-center my-2">
+                        <p class="text-xs font-medium text-emerald-800">Matriz de madeira limpa e pronta para nova gravação.</p>
+                    </div>
+                `;
+            } else {
+                artsHTML = `<div class="space-y-2.5 my-2">` + screen.arts.map((art, idx) => {
+                    const days = getDaysSince(art.lastOrderDate);
+                    const isArtInactive = days >= thresholdDays;
+                    const catBadge = art.category === 'Escola'
+                        ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-purple-100 text-purple-800"><i data-lucide="graduation-cap" class="w-3 h-3"></i> Escola</span>`
+                        : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-sky-100 text-sky-800"><i data-lucide="building-2" class="w-3 h-3"></i> Empresa</span>`;
+
+                    return `
+                        <div class="p-3 rounded-xl border ${isArtInactive ? 'bg-amber-50/70 border-amber-200' : 'bg-slate-50 border-slate-200/80'} space-y-1.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-1.5">
+                                    ${screen.arts.length > 1 ? `<span class="text-[10px] font-bold uppercase text-slate-400">Arte ${idx + 1}</span>` : ''}
+                                    ${catBadge}
+                                </div>
+                                <button onclick="renewArtOrder('${screen.id}', ${idx})" title="Registrar novo pedido hoje para este cliente" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-white hover:bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-lg flex items-center gap-1 transition">
+                                    <i data-lucide="calendar-check" class="w-3 h-3"></i> Pedido Hoje
+                                </button>
+                            </div>
+                            <div class="font-bold text-sm text-slate-900 leading-snug">${escapeHTML(art.client)}</div>
+                            <div class="text-xs text-slate-600">${escapeHTML(art.desc)}</div>
+                            <div class="flex items-center justify-between pt-1 text-[11px] ${isArtInactive ? 'text-amber-800 font-semibold' : 'text-slate-500'}">
+                                <span>Último pedido: ${formatDateBR(art.lastOrderDate)}</span>
+                                <span>(${formatRelativeTime(days)})</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('') + `</div>`;
+            }
+
+            return `
+                <article class="bg-white rounded-2xl border ${cardBorderClass} shadow-xs hover:shadow-md transition flex flex-col justify-between overflow-hidden">
+                    <div class="p-4 space-y-3">
+                        <!-- Topo do Card: Código, Tamanho e Status -->
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg font-extrabold text-slate-900 tracking-tight">${escapeHTML(screen.code)}</span>
+                                    ${sizeBadge}
+                                    ${screen.dimensions ? `<span class="text-xs text-slate-400 font-medium">${escapeHTML(screen.dimensions)}</span>` : ''}
+                                </div>
+                                <div class="flex items-center gap-1.5 text-xs text-slate-600 mt-1 font-medium">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-600 shrink-0"></i>
+                                    <span>${escapeHTML(roomName)} &bull; <strong class="text-slate-800">${escapeHTML(screen.shelf)}</strong></span>
+                                </div>
+                            </div>
+                            <div class="shrink-0">
+                                ${statusBadge}
+                            </div>
+                        </div>
+
+                        <!-- Lista de Artes -->
+                        ${artsHTML}
+
+                        <!-- Observações -->
+                        ${screen.notes ? `
+                            <div class="text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100 flex items-start gap-1.5">
+                                <i data-lucide="sticky-note" class="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5"></i>
+                                <span>${escapeHTML(screen.notes)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Rodapé de Ações -->
+                    <div class="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                        ${!screen.isClean ? `
+                            <button onclick="confirmCleanScreen('${screen.id}')" class="text-xs font-semibold text-amber-700 hover:text-amber-900 bg-amber-100/70 hover:bg-amber-200/70 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition">
+                                <i data-lucide="eraser" class="w-3.5 h-3.5"></i>
+                                <span>Desfazer / Limpar</span>
+                            </button>
+                        ` : `
+                            <button onclick="openScreenModal('${screen.id}')" class="text-xs font-semibold text-emerald-700 hover:text-emerald-900 bg-emerald-100/70 hover:bg-emerald-200/70 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition">
+                                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                                <span>Gravar Nova Arte</span>
+                            </button>
+                        `}
+
+                        <div class="flex items-center gap-1">
+                            <button onclick="openScreenModal('${screen.id}')" title="Editar Tela" class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="confirmDeleteScreen('${screen.id}')" title="Excluir Tela do Catálogo" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }
+
+        // ==========================================
+        // AÇÕES RÁPIDAS NAS TELAS
+        // ==========================================
+        function renewArtOrder(screenId, artIndex) {
+            const screen = appState.screens.find(s => s.id === screenId);
+            if (!screen || !screen.arts[artIndex]) return;
+
+            screen.arts[artIndex].lastOrderDate = getTodayISO();
+            saveToStorage();
+            refreshUI();
+            showToast(`Pedido atualizado para hoje (${screen.arts[artIndex].client})!`, 'success');
+        }
+
+        function confirmCleanScreen(screenId) {
+            const screen = appState.screens.find(s => s.id === screenId);
+            if (!screen) return;
+
+            openConfirmModal(
+                `Desfazer / Limpar Tela ${screen.code}`,
+                `Isso removerá as artes gravadas atualmente nesta matriz de madeira (${screen.arts.map(a => a.client).join(' e ')}), deixando a tela marcada como "Disponível / Limpa" na ${screen.shelf}. Confirmar?`,
+                () => {
+                    screen.isClean = true;
+                    screen.arts = [];
+                    saveToStorage();
+                    refreshUI();
+                    showToast(`Tela ${screen.code} marcada como limpa e disponível!`, 'success');
+                }
+            );
+        }
+
+        function confirmDeleteScreen(screenId) {
+            const screen = appState.screens.find(s => s.id === screenId);
+            if (!screen) return;
+
+            openConfirmModal(
+                `Excluir Tela ${screen.code}`,
+                `Tem certeza que deseja excluir permanentemente o cadastro da tela ${screen.code}? Se você apenas vai reaproveitar a madeira, use o botão "Desfazer / Limpar".`,
+                () => {
+                    appState.screens = appState.screens.filter(s => s.id !== screenId);
+                    saveToStorage();
+                    updateDemoBanner();
+                    refreshUI();
+                    showToast(`Tela ${screen.code} removida do catálogo.`, 'info');
+                }
+            );
+        }
+
+        // ==========================================
+        // MODAL: CADASTRO E EDIÇÃO DE TELA
+        // ==========================================
+        function openScreenModal(screenId = null) {
+            const modal = document.getElementById('screen-modal');
+            const form = document.getElementById('screen-form');
+            form.reset();
+
+            // Popula select de quartos
+            const roomSelect = document.getElementById('screen-room');
+            roomSelect.innerHTML = appState.rooms.map(r => `<option value="${r.id}">${escapeHTML(r.name)}</option>`).join('');
+
+            if (screenId) {
+                const screen = appState.screens.find(s => s.id === screenId);
+                if (!screen) return;
+
+                document.getElementById('screen-modal-title').textContent = `Editar Tela ${screen.code}`;
+                document.getElementById('screen-id').value = screen.id;
+                document.getElementById('screen-code').value = screen.code;
+                document.getElementById('screen-size').value = screen.size;
+                document.getElementById('screen-dimensions').value = screen.dimensions || '';
+                document.getElementById('screen-room').value = screen.roomId;
+                populateModalShelves(screen.shelf);
+                document.getElementById('screen-notes').value = screen.notes || '';
+
+                const isClean = Boolean(screen.isClean || !screen.arts || screen.arts.length === 0);
+                document.getElementById('screen-is-clean').checked = isClean;
+                toggleArtsSection();
+
+                if (!isClean && screen.arts.length > 0) {
+                    const a1 = screen.arts[0];
+                    document.getElementById('art1-category').value = a1.category;
+                    document.getElementById('art1-client').value = a1.client;
+                    document.getElementById('art1-desc').value = a1.desc;
+                    document.getElementById('art1-date').value = a1.lastOrderDate;
+
+                    if (screen.arts.length > 1) {
+                        const a2 = screen.arts[1];
+                        document.getElementById('has-art2').checked = true;
+                        toggleArt2Fields();
+                        document.getElementById('art2-category').value = a2.category;
+                        document.getElementById('art2-client').value = a2.client;
+                        document.getElementById('art2-desc').value = a2.desc;
+                        document.getElementById('art2-date').value = a2.lastOrderDate;
+                    } else {
+                        document.getElementById('has-art2').checked = false;
+                        toggleArt2Fields();
+                    }
+                } else {
+                    document.getElementById('art1-date').value = getTodayISO();
+                    document.getElementById('art2-date').value = getTodayISO();
+                    document.getElementById('has-art2').checked = false;
+                    toggleArt2Fields();
+                }
+            } else {
+                document.getElementById('screen-modal-title').textContent = 'Cadastrar Nova Tela';
+                document.getElementById('screen-id').value = '';
+                if (activeRoomFilter !== 'ALL') {
+                    roomSelect.value = activeRoomFilter;
+                }
+                populateModalShelves();
+                document.getElementById('screen-is-clean').checked = false;
+                toggleArtsSection();
+                document.getElementById('has-art2').checked = false;
+                toggleArt2Fields();
+                document.getElementById('art1-date').value = getTodayISO();
+                document.getElementById('art2-date').value = getTodayISO();
+            }
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeScreenModal() {
+            document.getElementById('screen-modal').classList.add('hidden');
+        }
+
+        function populateModalShelves(selectedShelf = null) {
+            const roomId = document.getElementById('screen-room').value;
+            const shelfSelect = document.getElementById('screen-shelf');
+            const room = appState.rooms.find(r => r.id === roomId);
+
+            if (!room || room.shelves.length === 0) {
+                shelfSelect.innerHTML = `<option value="Geral">Geral</option>`;
+                return;
+            }
+
+            shelfSelect.innerHTML = room.shelves.map(sh => `<option value="${escapeHTML(sh)}">${escapeHTML(sh)}</option>`).join('');
+            if (selectedShelf && room.shelves.includes(selectedShelf)) {
+                shelfSelect.value = selectedShelf;
+            }
+        }
+
+        function toggleArtsSection() {
+            const isClean = document.getElementById('screen-is-clean').checked;
+            const container = document.getElementById('arts-container');
+            container.classList.toggle('hidden', isClean);
+
+            // Ajusta obrigatoriedade dos campos da Arte 1
+            document.getElementById('art1-client').required = !isClean;
+            document.getElementById('art1-desc').required = !isClean;
+            document.getElementById('art1-date').required = !isClean;
+
+            if (isClean) {
+                document.getElementById('art2-client').required = false;
+                document.getElementById('art2-desc').required = false;
+                document.getElementById('art2-date').required = false;
+            } else {
+                toggleArt2Fields();
+            }
+        }
+
+        function toggleArt2Fields() {
+            const hasArt2 = document.getElementById('has-art2').checked;
+            const isClean = document.getElementById('screen-is-clean').checked;
+            const fields = document.getElementById('art2-fields');
+            fields.classList.toggle('hidden', !hasArt2);
+
+            const req = hasArt2 && !isClean;
+            document.getElementById('art2-client').required = req;
+            document.getElementById('art2-desc').required = req;
+            document.getElementById('art2-date').required = req;
+        }
+
+        function saveScreen(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('screen-id').value;
+            const code = document.getElementById('screen-code').value.trim();
+            const size = document.getElementById('screen-size').value;
+            const dimensions = document.getElementById('screen-dimensions').value.trim();
+            const roomId = document.getElementById('screen-room').value;
+            const shelf = document.getElementById('screen-shelf').value;
+            const isClean = document.getElementById('screen-is-clean').checked;
+            const notes = document.getElementById('screen-notes').value.trim();
+
+            let arts = [];
+            if (!isClean) {
+                arts.push({
+                    category: document.getElementById('art1-category').value,
+                    client: document.getElementById('art1-client').value.trim(),
+                    desc: document.getElementById('art1-desc').value.trim(),
+                    lastOrderDate: document.getElementById('art1-date').value
+                });
+
+                if (document.getElementById('has-art2').checked) {
+                    arts.push({
+                        category: document.getElementById('art2-category').value,
+                        client: document.getElementById('art2-client').value.trim(),
+                        desc: document.getElementById('art2-desc').value.trim(),
+                        lastOrderDate: document.getElementById('art2-date').value
+                    });
+                }
+            }
+
+            if (id) {
+                const index = appState.screens.findIndex(s => s.id === id);
+                if (index !== -1) {
+                    appState.screens[index] = {
+                        ...appState.screens[index],
+                        code, size, dimensions, roomId, shelf, isClean, notes, arts
+                    };
+                    showToast(`Tela ${code} atualizada com sucesso!`, 'success');
+                }
+            } else {
+                appState.screens.unshift({
+                    id: generateId('scr'),
+                    code, size, dimensions, roomId, shelf, isClean, notes, arts
+                });
+                showToast(`Tela ${code} cadastrada no catálogo!`, 'success');
+            }
+
+            saveToStorage();
+            closeScreenModal();
+            refreshUI();
+        }
+
+        // ==========================================
+        // MODAL: GESTÃO DE QUARTOS E PRATELEIRAS
+        // ==========================================
+        function openSpacesModal() {
+            renderRoomsManagement();
+            document.getElementById('spaces-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeSpacesModal() {
+            document.getElementById('spaces-modal').classList.add('hidden');
+            refreshUI();
+        }
+
+        function renderRoomsManagement() {
+            const container = document.getElementById('rooms-management-list');
+            container.innerHTML = appState.rooms.map(room => {
+                const screenCount = appState.screens.filter(s => s.roomId === room.id).length;
+                return `
+                    <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/70 space-y-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="door-open" class="w-4 h-4 text-amber-600"></i>
+                                <span class="font-bold text-slate-900 text-sm">${escapeHTML(room.name)}</span>
+                                <span class="text-xs bg-white border border-slate-200 px-2 py-0.5 rounded-md text-slate-500">${screenCount} tela(s)</span>
+                            </div>
+                            ${appState.rooms.length > 1 ? `
+                                <button onclick="deleteRoom('${room.id}')" title="Remover Quarto" class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1 rounded-lg font-medium transition">
+                                    Excluir Quarto
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <!-- Badges das Prateleiras -->
+                        <div class="flex flex-wrap gap-2">
+                            ${room.shelves.map((shelf, idx) => `
+                                <span class="inline-flex items-center gap-1.5 bg-white border border-slate-300 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-700">
+                                    <span>${escapeHTML(shelf)}</span>
+                                    ${room.shelves.length > 1 ? `
+                                        <button onclick="removeShelf('${room.id}', ${idx})" class="text-slate-400 hover:text-rose-600 transition" title="Remover prateleira">
+                                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    ` : ''}
+                                </span>
+                            `).join('')}
+                        </div>
+
+                        <!-- Adicionar Prateleira neste Quarto -->
+                        <div class="flex gap-2 pt-1">
+                            <input type="text" id="new-shelf-${room.id}" placeholder="Nova prateleira/nicho neste quarto..." class="flex-1 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <button onclick="addShelf('${room.id}')" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                                + Prateleira
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function addRoom(event) {
+            event.preventDefault();
+            const input = document.getElementById('new-room-name');
+            const name = input.value.trim();
+            if (!name) return;
+
+            appState.rooms.push({
+                id: generateId('room'),
+                name: name,
+                shelves: ['Prateleira 1']
+            });
+            input.value = '';
+            saveToStorage();
+            renderRoomsManagement();
+            showToast(`Quarto "${name}" adicionado!`, 'success');
+        }
+
+        function deleteRoom(roomId) {
+            const hasScreens = appState.screens.some(s => s.roomId === roomId);
+            if (hasScreens) {
+                showToast('Não é possível excluir um quarto que possui telas cadastradas. Mova ou exclua as telas antes.', 'error');
+                return;
+            }
+            appState.rooms = appState.rooms.filter(r => r.id !== roomId);
+            if (activeRoomFilter === roomId) activeRoomFilter = 'ALL';
+            saveToStorage();
+            renderRoomsManagement();
+            showToast('Quarto removido.', 'info');
+        }
+
+        function addShelf(roomId) {
+            const input = document.getElementById(`new-shelf-${roomId}`);
+            const shelfName = input.value.trim();
+            if (!shelfName) return;
+
+            const room = appState.rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            if (room.shelves.includes(shelfName)) {
+                showToast('Já existe uma prateleira com esse nome neste quarto.', 'error');
+                return;
+            }
+
+            room.shelves.push(shelfName);
+            input.value = '';
+            saveToStorage();
+            renderRoomsManagement();
+            showToast(`Prateleira "${shelfName}" adicionada!`, 'success');
+        }
+
+        function removeShelf(roomId, shelfIndex) {
+            const room = appState.rooms.find(r => r.id === roomId);
+            if (!room) return;
+            const shelfName = room.shelves[shelfIndex];
+
+            const inUse = appState.screens.some(s => s.roomId === roomId && s.shelf === shelfName);
+            if (inUse) {
+                showToast(`A prateleira "${shelfName}" possui telas guardadas nela.`, 'error');
+                return;
+            }
+
+            room.shelves.splice(shelfIndex, 1);
+            saveToStorage();
+            renderRoomsManagement();
+        }
+
+        // ==========================================
+        // BACKUP (.JSON) E EXPORTAÇÃO EXCEL (.CSV)
+        // ==========================================
+        function toggleBackupMenu() {
+            const dropdown = document.getElementById('backup-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Fecha dropdown ao clicar fora
+        window.addEventListener('click', (e) => {
+            const btn = document.getElementById('backup-menu-btn');
+            const dropdown = document.getElementById('backup-dropdown');
+            if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
         });
 
-        uploadImage.addEventListener('change', function(e) {
-            const files = e.target.files;
-            if (files && files.length > 0) {
-                const file = files[0];
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    imageToCrop.src = event.target.result;
-                    cropAreaContainer.classList.remove('hidden');
-                    previewContainer.classList.add('hidden');
+        function exportBackupJSON() {
+            document.getElementById('backup-dropdown').classList.add('hidden');
+            const backupPayload = {
+                app: 'SeriCatalog',
+                version: '1.0',
+                exportedAt: new Date().toISOString(),
+                data: appState
+            };
 
-                    if (cropper) {
-                        cropper.destroy();
+            const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = getTodayISO();
+            a.href = url;
+            a.download = `backup-telas-serigrafia-${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Backup JSON baixado com sucesso!', 'success');
+        }
+
+        function importBackupJSON(event) {
+            document.getElementById('backup-dropdown').classList.add('hidden');
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const importedData = parsed.data ? parsed.data : parsed;
+
+                    if (!Array.isArray(importedData.rooms) || !Array.isArray(importedData.screens)) {
+                        throw new Error('Estrutura de arquivo inválida.');
                     }
 
-                    cropper = new Cropper(imageToCrop, {
-                        aspectRatio: 1,
-                        viewMode: 1,
-                        dragMode: 'move',
-                        autoCropArea: 0.9,
-                        restore: false,
-                        guides: false,
-                        center: false,
-                        highlight: false,
-                        cropBoxMovable: true,
-                        cropBoxResizable: true,
-                        toggleDragModeOnDblclick: false,
-                    });
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+                    openConfirmModal(
+                        'Restaurar Backup',
+                        `Foram encontradas ${importedData.screens.length} telas e ${importedData.rooms.length} quartos neste arquivo. Isso substituirá os dados atuais do catálogo. Deseja continuar?`,
+                        () => {
+                            appState = {
+                                inactivityMonths: importedData.inactivityMonths || 6,
+                                isDemoData: false,
+                                rooms: importedData.rooms,
+                                screens: importedData.screens
+                            };
+                            document.getElementById('inactivity-months').value = appState.inactivityMonths;
+                            saveToStorage();
+                            updateDemoBanner();
+                            refreshUI();
+                            showToast('Backup restaurado com sucesso!', 'success');
+                        }
+                    );
+                } catch (err) {
+                    showToast('Erro ao ler o arquivo de backup. Verifique se é um JSON válido.', 'error');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
 
-        cropBtn.addEventListener('click', function() {
-            if (!cropper) return;
+        function exportToExcel() {
+            // Cabeçalhos claros em PT-BR
+            const headers = [
+                'Código da Tela',
+                'Tamanho',
+                'Medidas',
+                'Quarto / Sala',
+                'Prateleira',
+                'Status da Tela',
+                'Arte 1 - Categoria',
+                'Arte 1 - Cliente (Empresa/Escola)',
+                'Arte 1 - Descrição',
+                'Arte 1 - Último Pedido',
+                'Arte 1 - Dias Inativo',
+                'Arte 2 - Categoria',
+                'Arte 2 - Cliente (Empresa/Escola)',
+                'Arte 2 - Descrição',
+                'Arte 2 - Último Pedido',
+                'Arte 2 - Dias Inativo',
+                'Observações'
+            ];
 
-            const canvas = cropper.getCroppedCanvas({
-                width: 1000,
-                height: 1000,
+            const statusLabels = {
+                'AVAILABLE': 'Disponível / Limpa',
+                'INACTIVE': 'Candidata a Desfazer',
+                'ACTIVE': 'Ativa'
+            };
+
+            const rows = appState.screens.map(s => {
+                const status = statusLabels[getScreenStatus(s)] || 'Ativa';
+                const roomName = getRoomName(s.roomId);
+                const a1 = (!s.isClean && s.arts && s.arts[0]) ? s.arts[0] : null;
+                const a2 = (!s.isClean && s.arts && s.arts[1]) ? s.arts[1] : null;
+
+                return [
+                    s.code,
+                    s.size,
+                    s.dimensions || '',
+                    roomName,
+                    s.shelf,
+                    status,
+                    a1 ? a1.category : '',
+                    a1 ? a1.client : '',
+                    a1 ? a1.desc : '',
+                    a1 ? formatDateBR(a1.lastOrderDate) : '',
+                    a1 ? getDaysSince(a1.lastOrderDate) : '',
+                    a2 ? a2.category : '',
+                    a2 ? a2.client : '',
+                    a2 ? a2.desc : '',
+                    a2 ? formatDateBR(a2.lastOrderDate) : '',
+                    a2 ? getDaysSince(a2.lastOrderDate) : '',
+                    s.notes || ''
+                ];
             });
 
-            canvas.toBlob(function(blob) {
-                croppedFileBlob = blob;
-                croppedBlobUrl = URL.createObjectURL(blob);
-                
-                croppedResult.src = croppedBlobUrl;
-                previewContainer.classList.remove('hidden');
-                cropAreaContainer.classList.add('hidden');
+            // Escapa valores com ponto-e-vírgula ou quebras de linha
+            const csvContent = [
+                headers.join(';'),
+                ...rows.map(row => row.map(val => {
+                    const str = String(val ?? '').replace(/"/g, '""');
+                    return `"${str}"`;
+                }).join(';'))
+            ].join('\r\n');
 
-                const link = document.createElement('a');
-                link.href = croppedBlobUrl;
-                link.download = 'arte-botton.png';
-                link.click();
-            }, 'image/png');
-        });
+            // BOM UTF-8 (\uFEFF) garante acentuação perfeita no Excel PT-BR
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `catalogo-telas-serigrafia-${getTodayISO()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
 
-        function montarTextoPedido() {
-            const nome = document.getElementById('nome').value;
-            const telefone = telefoneInput.value;
-
-            localStorage.setItem('cliente_nome', nome);
-            localStorage.setItem('cliente_tel', telefone);
-            
-            let formaPagamento = "";
-            radiosPagamento.forEach(r => { if (r.checked) formaPagamento = r.value; });
-
-            let pagamentoTexto = formaPagamento;
-            if (formaPagamento === 'Pix') {
-                pagamentoTexto += " (Chave e dados serão enviados via WhatsApp após a conclusão do pedido)";
-            } else if (formaPagamento === 'Dinheiro') {
-                const troco = trocoValorInput.value.trim();
-                const aceitaPix = aceitaTrocoPixCheckbox.checked ? "Sim" : "Não";
-                pagamentoTexto += troco ? ` (Precisa de troco para: ${troco})` : " (Sem troco informado)";
-                pagamentoTexto += `\n*Aceita troco em Pix:* ${aceitaPix}`;
-            }
-
-            const isRetirada = retiradaCheckbox.checked;
-            const cep = cepInput.value.trim();
-            const rua = ruaInput.value.trim();
-            const numero = numeroInput.value.trim();
-            const bairro = bairroInput.value.trim();
-            const complemento = complementoInput.value.trim();
-            const referencia = referenciaInput.value.trim();
-            const autorizaVizinho = entregaVizinhoCheckbox.checked;
-
-            let subtotal37 = 0;
-            let subtotal58 = 0;
-            let descItens = "";
-
-            if (qtd37 > 0) {
-                let p37 = getPreco37(qtd37);
-                subtotal37 = qtd37 * p37;
-                descItens += `• ${qtd37}x Botton 37mm (R$ ${p37.toFixed(2).replace('.', ',')} cada) = R$ ${subtotal37.toFixed(2).replace('.', ',')}\n`;
-            }
-
-            if (qtd58 > 0) {
-                let p58 = getPreco58(qtd58);
-                subtotal58 = qtd58 * p58;
-                descItens += `• ${qtd58}x Botton 58mm (R$ ${p58.toFixed(2).replace('.', ',')} cada) = R$ ${subtotal58.toFixed(2).replace('.', ',')}\n`;
-            }
-
-            let subtotal = subtotal37 + subtotal58;
-            let frete = isRetirada ? 0 : (subtotal > 70.00 ? 0 : 8.00);
-            let valorTotal = subtotal + frete;
-
-            let subtotalFormatado = subtotal.toFixed(2).replace('.', ',');
-            let freteFormatado = frete.toFixed(2).replace('.', ',');
-            let valorTotalFormatado = valorTotal.toFixed(2).replace('.', ',');
-
-            let entregaTexto = "";
-            if (isRetirada) {
-                entregaTexto = "Retirar no endereço do vendedor (Rua Clovis Mendes Garcia, Centro, 31)";
-            } else {
-                let compTexto = complemento ? `, ${complemento}` : "";
-                let refTexto = referencia ? `\n*Referência:* ${referencia}` : "";
-                let vizinhoTexto = autorizaVizinho ? "\n*Autoriza entrega ao vizinho:* Sim" : "\n*Autoriza entrega ao vizinho:* Não";
-                entregaTexto = `Endereço: ${rua}, Nº ${numero}${compTexto} - Bairro: ${bairro} (CEP: ${cep})${refTexto}${vizinhoTexto}`;
-            }
-
-            let freteTextoMensagem = isRetirada ? 
-                "R$ 0,00 (Retirada com o vendedor)" : 
-                (frete === 0 ? "R$ 0,00 (FRETE GRÁTIS - Acima de R$ 70,00)" : `R$ ${freteFormatado}`);
-
-            let arteMensagem = croppedFileBlob ? 
-                "_(O cliente utilizou o simulador e a foto recortada foi baixada no celular dele para envio. Mais artes diferentes podem ser enviadas aqui no chat!)_" : 
-                "_(O cliente não utilizou o simulador de imagem e enviará as artes diferentes por aqui no chat)_";
-
-            return `*Novo Pedido de Botton!* 🔘\n\n` +
-                   `*Nome:* ${nome}\n` +
-                   `*Telefone:* ${telefone}\n\n` +
-                   `*Itens do Pedido:*\n${descItens}\n` +
-                   `*Valor dos Bottons:* R$ ${subtotalFormatado}\n` +
-                   `*Valor do Frete:* ${freteTextoMensagem}\n` +
-                   `*Valor Total:* R$ ${valorTotalFormatado} (R$ ${subtotalFormatado} dos bottons + R$ ${freteFormatado} do frete)\n\n` +
-                   `*Pagamento:* ${pagamentoTexto}\n` +
-                   `*Modalidade:* ${entregaTexto}\n\n` +
-                   `_*(Cliente ciente de que o comércio opera exclusivamente em Itapeva - SP)*_\n\n` +
-                   `${arteMensagem}`;
+            showToast('Planilha Excel (.CSV) exportada com sucesso!', 'success');
         }
 
-        function fecharModalRedirecionamento() {
-            document.getElementById('modalRedirecionamento').classList.add('hidden');
+        // ==========================================
+        // UTILITÁRIOS DE UI (MODAL CONFIRMAÇÃO & TOAST)
+        // ==========================================
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            confirmCallback = onConfirm;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+
+            const btn = document.getElementById('confirm-action-btn');
+            btn.onclick = () => {
+                closeConfirmModal();
+                if (confirmCallback) confirmCallback();
+            };
         }
 
-        function copiarTextoPedido() {
-            if (qtd37 === 0 && qtd58 === 0) {
-                alert('Por favor, adicione pelo menos um botton antes de copiar o pedido!');
-                return;
-            }
-            if (!document.getElementById('nome').value || !telefoneInput.value) {
-                alert('Por favor, preencha pelo menos seu Nome e Telefone!');
-                return;
-            }
-
-            const texto = montarTextoPedido();
-            navigator.clipboard.writeText(texto).then(() => {
-                alert('✓ Texto do pedido copiado com sucesso! Cole na conversa do WhatsApp com o vendedor.');
-            }).catch(() => {
-                alert('Não foi possível copiar automaticamente. Selecione e copie o texto manualmente.');
-            });
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            confirmCallback = null;
         }
 
-        document.getElementById('orderForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const colors = {
+                success: 'bg-emerald-800 text-white border-emerald-700',
+                error: 'bg-rose-800 text-white border-rose-700',
+                info: 'bg-slate-800 text-white border-slate-700'
+            };
+            const icons = {
+                success: 'check-circle',
+                error: 'alert-circle',
+                info: 'info'
+            };
 
-            if (qtd37 === 0 && qtd58 === 0) {
-                alert('Por favor, adicione pelo menos um botton (37mm ou 58mm) antes de enviar o pedido!');
-                return;
-            }
+            const toast = document.createElement('div');
+            toast.className = `${colors[type] || colors.info} border px-4 py-3 rounded-xl shadow-lg flex items-center gap-2.5 text-sm font-medium pointer-events-auto transition-all duration-300`;
+            toast.innerHTML = `
+                <i data-lucide="${icons[type] || 'info'}" class="w-4 h-4 shrink-0"></i>
+                <span>${escapeHTML(message)}</span>
+            `;
 
-            const textoMensagem = montarTextoPedido();
-            const urlWhatsApp = `https://wa.me/${WHATSAPP_NUMERO_LOJA}?text=${encodeURIComponent(textoMensagem)}`;
+            container.appendChild(toast);
+            lucide.createIcons();
 
-            // Exibir Modal Informativo
-            document.getElementById('modalRedirecionamento').classList.remove('hidden');
-
-            // Abrir WhatsApp
             setTimeout(() => {
-                window.open(urlWhatsApp, '_blank');
-            }, 600);
-        });
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(8px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Inicialização
+        window.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
